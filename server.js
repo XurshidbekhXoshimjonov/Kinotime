@@ -59,7 +59,7 @@ app.get("/robots.txt", (req, res) => {
 app.get("/api/config.js", (req, res) => {
   const config = {
     siteUrl: getPublicSiteUrl(req),
-    apiUrl: configuredApiUrl,
+    apiUrl: getPublicApiUrl(req),
     betaNoindex: shouldNoindex(req),
   };
 
@@ -96,6 +96,16 @@ function getPublicSiteUrl(req) {
 
   const host = req.get("host");
   return host ? `${req.protocol}://${host}` : configuredSiteUrl;
+}
+
+function getPublicApiUrl(req) {
+  const configuredApiHost = getHostname(configuredApiUrl);
+
+  if (process.env.NEXT_PUBLIC_API_URL && (!isLocalHost(configuredApiHost) || isLocalHost(req.hostname))) {
+    return configuredApiUrl;
+  }
+
+  return `${getPublicSiteUrl(req)}/api`;
 }
 
 function shouldNoindex(req) {
