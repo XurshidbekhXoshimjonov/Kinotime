@@ -1,0 +1,15 @@
+{
+  "scripts": {
+    "dev": "node server.js",
+    "build": "node scripts/build-check.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.108.1",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mongodb": "^7.3.0",
+    "postgres": "^3.4.9"
+  }
+}

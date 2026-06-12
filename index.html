@@ -1,0 +1,980 @@
+﻿<!DOCTYPE html>
+<html lang="uz">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="KinoTime.net - Uzbek tilidagi filmlar, seriallar va premyeralar."
+    />
+    <!-- KINOTIME_NOINDEX_META -->
+    <title>KinoTime.net | Filmlar</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.21.0/dist/tabler-icons.min.css" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="/api/config.js"></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div id="root">
+      <!-- Site header: logo, navigation and auth actions -->
+      <header class="site-header">
+        <div class="site-header__inner">
+          <a class="brand-logo" href="#home" data-home-link aria-label="KinoTime bosh sahifa">
+    <svg width="300" height="64" viewBox="0 0 300 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ktIcon" x1="12" y1="10" x2="54" y2="54" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+
+    <linearGradient id="ktText" x1="138" y1="16" x2="208" y2="45" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2.2" result="blur"/>
+      <feColorMatrix in="blur" type="matrix"
+        values="0 0 0 0 0.18
+                0 0 0 0 0.30
+                0 0 0 0 1
+                0 0 0 0.55 0"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Icon -->
+  <g filter="url(#softGlow)">
+    <circle cx="32" cy="32" r="23" stroke="url(#ktIcon)" stroke-width="3.5"/>
+    <path d="M27 21.5L42 32L27 42.5V21.5Z" fill="url(#ktIcon)"/>
+
+    <!-- Film strip curve -->
+    <path d="M45 38C39.5 47 30.5 53 20 54" stroke="url(#ktIcon)" stroke-width="3.5" stroke-linecap="round"/>
+    <rect x="38.5" y="39.5" width="4.8" height="4.8" rx="1" fill="url(#ktIcon)"/>
+    <rect x="33" y="45" width="4.8" height="4.8" rx="1" fill="url(#ktIcon)"/>
+    <rect x="26.8" y="48.5" width="4.8" height="4.8" rx="1" fill="url(#ktIcon)"/>
+  </g>
+
+  <!-- Text -->
+  <text x="68" y="42"
+        font-family="Inter, Arial, Helvetica, sans-serif"
+        font-size="30"
+        font-weight="850"
+        letter-spacing="-1.2">
+    <tspan fill="#FFFFFF">kino</tspan><tspan fill="url(#ktText)">time</tspan><tspan fill="#FFFFFF" font-size="23" dx="2">.net</tspan>
+  </text>
+</svg>
+          </a>
+
+          <button
+            class="icon-button menu-toggle"
+            type="button"
+            aria-label="Menyuni ochish"
+            aria-expanded="false"
+          >
+            <span class="menu-toggle__line"></span>
+            <span class="menu-toggle__line"></span>
+            <span class="menu-toggle__line"></span>
+          </button>
+
+          <nav class="site-nav" aria-label="Asosiy menyu">
+            <a class="site-nav__link site-nav__link--active" href="#filmlar" data-section-link="filmlar">
+              Filmlar
+            </a>
+            <a class="site-nav__link" href="#seriallar" data-section-link="seriallar">
+              Seriallar
+            </a>
+          </nav>
+
+          <div class="auth-actions">
+            <button class="button auth-button auth-button--login" type="button" data-auth-link="login">
+              <svg class="auth-button__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M9 8V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7a2 2 0 0 1-2-2v-3" />
+                <path d="M3 12h13" />
+                <path d="m13 9 3 3-3 3" />
+              </svg>
+              Login
+            </button>
+            <button class="button auth-button auth-button--signup" type="button" data-auth-link="signup">
+              <svg class="auth-button__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M8 7a4 4 0 1 0 8 0 4 4 0 0 0-8 0" />
+                <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
+              </svg>
+              Sign Up
+            </button>
+          </div>
+
+          <div class="profile-menu" id="profile-menu" hidden>
+            <button
+              class="profile-menu__button"
+              type="button"
+              id="profile-toggle"
+              aria-controls="profile-dropdown"
+              aria-expanded="false"
+              aria-haspopup="menu"
+            >
+              <span class="profile-menu__avatar" id="profile-avatar">U</span>
+              <span class="profile-menu__name" id="profile-name">User</span>
+              <span class="profile-menu__arrow" aria-hidden="true">⌄</span>
+            </button>
+
+            <div class="profile-menu__dropdown" id="profile-dropdown" role="menu" hidden>
+              <button class="profile-menu__item" type="button" id="profile-admin-link" role="menuitem" hidden>
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M4 4h7v7H4z" />
+                  <path d="M13 4h7v7h-7z" />
+                  <path d="M4 13h7v7H4z" />
+                  <path d="M13 13h7v7h-7z" />
+                </svg>
+                Admin Panel
+              </button>
+              <button class="profile-menu__item profile-menu__item--danger" type="button" id="logout-button" role="menuitem">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M10 17v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v2" />
+                  <path d="M15 12H7" />
+                  <path d="m12 9 3 3-3 3" />
+                </svg>
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="page-shell main-content" id="home">
+        <!-- Page controls: title and live search -->
+        <section class="catalog-header" aria-labelledby="catalog-title">
+          <div class="catalog-header__top">
+            <h1 id="catalog-title">Filmlar</h1>
+
+            <label class="search-box" for="search-input">
+              <svg
+                class="search-box__icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  d="M10.8 18.1a7.3 7.3 0 1 1 0-14.6 7.3 7.3 0 0 1 0 14.6Zm0-1.8a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11Zm5.2.3 4.2 4.2-1.3 1.2-4.2-4.2 1.3-1.2Z"
+                />
+              </svg>
+              <input id="search-input" type="search" placeholder="Kino qidirish..." />
+            </label>
+          </div>
+        </section>
+
+        <!-- Catalog grid: movie and serial cards are rendered from app.js -->
+        <section class="catalog-section" id="catalog-section" aria-label="Filmlar ro'yxati">
+          <div class="kino-grid" id="kino-grid"></div>
+        </section>
+
+        <!-- Movie detail page: rendered from app.js when a card is opened -->
+        <section class="detail-page" id="detail-page" hidden aria-label="Film haqida ma'lumot">
+          <button class="back-button" type="button" data-back-to-catalog hidden>
+            Filmlarga qaytish
+          </button>
+          <div id="detail-content"></div>
+        </section>
+
+        <!-- Auth pages: premium login and sign up layout -->
+        <section class="auth-page" id="auth-page" hidden aria-labelledby="auth-page-title">
+          <div class="auth-page__backdrop" aria-hidden="true">
+            <span class="auth-page__glow auth-page__glow--left"></span>
+            <span class="auth-page__glow auth-page__glow--right"></span>
+          </div>
+
+          <div class="auth-page__card">
+            <svg class="auth-page__logo" width="300" height="64" viewBox="0 0 300 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="KinoTime">
+              <defs>
+                <linearGradient id="authKtIcon" x1="12" y1="10" x2="54" y2="54" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#2563EB"/>
+                  <stop offset="1" stop-color="#7C3AED"/>
+                </linearGradient>
+
+                <linearGradient id="authKtText" x1="138" y1="16" x2="208" y2="45" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#2563EB"/>
+                  <stop offset="1" stop-color="#7C3AED"/>
+                </linearGradient>
+
+                <filter id="authSoftGlow" x="-40%" y="-40%" width="180%" height="180%">
+                  <feGaussianBlur stdDeviation="2.2" result="blur"/>
+                  <feColorMatrix in="blur" type="matrix"
+                    values="0 0 0 0 0.18
+                            0 0 0 0 0.30
+                            0 0 0 0 1
+                            0 0 0 0.55 0"/>
+                  <feMerge>
+                    <feMergeNode/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+              </defs>
+
+              <g filter="url(#authSoftGlow)">
+                <circle cx="32" cy="32" r="23" stroke="url(#authKtIcon)" stroke-width="3.5"/>
+                <path d="M27 21.5L42 32L27 42.5V21.5Z" fill="url(#authKtIcon)"/>
+                <path d="M45 38C39.5 47 30.5 53 20 54" stroke="url(#authKtIcon)" stroke-width="3.5" stroke-linecap="round"/>
+                <rect x="38.5" y="39.5" width="4.8" height="4.8" rx="1" fill="url(#authKtIcon)"/>
+                <rect x="33" y="45" width="4.8" height="4.8" rx="1" fill="url(#authKtIcon)"/>
+                <rect x="26.8" y="48.5" width="4.8" height="4.8" rx="1" fill="url(#authKtIcon)"/>
+              </g>
+
+              <text x="68" y="42"
+                    font-family="Inter, Arial, Helvetica, sans-serif"
+                    font-size="30"
+                    font-weight="850"
+                    letter-spacing="-1.2">
+                <tspan fill="#FFFFFF">kino</tspan><tspan fill="url(#authKtText)">time</tspan><tspan fill="#FFFFFF" font-size="23" dx="2">.net</tspan>
+              </text>
+            </svg>
+
+            <div class="auth-page__intro">
+              <h1 id="auth-page-title">Welcome back</h1>
+              <p id="auth-page-subtitle">KinoTime profilingizga kiring</p>
+            </div>
+
+            <form class="auth-page__form" id="login-form" data-auth-page-form="login" novalidate>
+              <label class="auth-field">
+                <span class="auth-field__label">Email</span>
+                <div class="auth-field__control">
+                  <i class="ti ti-mail auth-field__icon" aria-hidden="true"></i>
+                  <input type="email" name="email" placeholder="email@example.com" autocomplete="email" />
+                </div>
+                <p class="auth-field__error" data-field-error="email"></p>
+              </label>
+
+              <label class="auth-field">
+                <span class="auth-field__label">Parol</span>
+                <div class="auth-field__control">
+                  <i class="ti ti-lock auth-field__icon" aria-hidden="true"></i>
+                  <input type="password" name="password" placeholder="Parol kiriting" autocomplete="current-password" />
+                  <button class="auth-field__toggle" type="button" data-password-toggle aria-label="Parolni ko'rsatish">
+                    <i class="ti ti-eye" aria-hidden="true"></i>
+                  </button>
+                </div>
+                <p class="auth-field__error" data-field-error="password"></p>
+              </label>
+
+              <button class="auth-page__submit" type="submit">Login</button>
+            </form>
+
+            <form class="auth-page__form" id="signup-form" data-auth-page-form="signup" novalidate hidden>
+              <label class="auth-field">
+                <span class="auth-field__label">Ism</span>
+                <div class="auth-field__control">
+                  <i class="ti ti-user auth-field__icon" aria-hidden="true"></i>
+                  <input type="text" name="name" placeholder="Ismingiz" autocomplete="name" />
+                </div>
+                <p class="auth-field__error" data-field-error="name"></p>
+              </label>
+
+              <label class="auth-field">
+                <span class="auth-field__label">Email</span>
+                <div class="auth-field__control">
+                  <i class="ti ti-mail auth-field__icon" aria-hidden="true"></i>
+                  <input type="email" name="email" placeholder="email@example.com" autocomplete="email" />
+                </div>
+                <p class="auth-field__error" data-field-error="email"></p>
+              </label>
+
+              <label class="auth-field">
+                <span class="auth-field__label">Parol</span>
+                <div class="auth-field__control">
+                  <i class="ti ti-lock auth-field__icon" aria-hidden="true"></i>
+                  <input type="password" name="password" placeholder="Kamida 6 ta belgi" autocomplete="new-password" />
+                  <button class="auth-field__toggle" type="button" data-password-toggle aria-label="Parolni ko'rsatish">
+                    <i class="ti ti-eye" aria-hidden="true"></i>
+                  </button>
+                </div>
+                <p class="auth-field__error" data-field-error="password"></p>
+              </label>
+
+              <button class="auth-page__submit" type="submit">Sign Up</button>
+            </form>
+
+            <p class="auth-page__feedback" id="auth-page-feedback" role="status"></p>
+            <p class="auth-page__switch" id="auth-page-switch"></p>
+          </div>
+        </section>
+
+        <!-- Admin panel: protected movie upload/edit workspace -->
+        <section class="admin-panel" id="admin-panel" hidden aria-labelledby="admin-title">
+          <div class="admin-guard" id="admin-guard" hidden>
+            <h2>Ruxsat yo'q</h2>
+            <p>Film qo'shish, tahrirlash va o'chirish faqat admin hisobiga ruxsat etiladi.</p>
+          </div>
+
+          <div class="admin-workspace admin-page-content" id="admin-workspace">
+            <div class="admin-panel__header">
+              <h2 id="admin-title">Admin panel</h2>
+              <p>Filmlar va seriallar alohida boshqariladi.</p>
+            </div>
+
+            <div class="admin-tabs" role="tablist" aria-label="Admin bo'limlari">
+              <button class="admin-tab is-active" type="button" role="tab" aria-selected="true" data-admin-tab="movies">
+                <i class="ti ti-movie" aria-hidden="true"></i>
+                Movies
+              </button>
+              <button class="admin-tab" type="button" role="tab" aria-selected="false" data-admin-tab="series">
+                <i class="ti ti-device-tv" aria-hidden="true"></i>
+                Series
+              </button>
+            </div>
+
+            <section class="admin-view is-active" id="admin-movies-panel" data-admin-panel="movies" aria-labelledby="admin-movie-form-title">
+              <div class="admin-section-heading">
+                <h3 id="admin-movie-form-title">Add New Movie</h3>
+                <p>Yuklab olish uchun bitta 1080p havola ishlatiladi.</p>
+              </div>
+
+              <div class="admin-layout admin-main-grid">
+              <form class="admin-form" id="admin-form" novalidate>
+                <fieldset class="admin-fieldset">
+                  <legend>Asosiy ma'lumotlar</legend>
+
+                  <label class="field">
+                    <span>Uzbek Title</span>
+                    <input type="text" name="titleUz" placeholder="Film nomi" required />
+                  </label>
+
+                  <label class="field">
+                    <span>Original Title</span>
+                    <input type="text" name="originalTitle" placeholder="Original nomi" required />
+                  </label>
+
+                  <label class="field">
+                    <span>Slug</span>
+                    <input type="text" name="slug" placeholder="qaronlik-ortida" required />
+                  </label>
+
+                  <label class="field field--wide">
+                    <span>Description / Tavsif</span>
+                    <textarea name="description" rows="5" maxlength="1000" placeholder="Film haqida qisqacha ma'lumot..." required></textarea>
+                  </label>
+                </fieldset>
+
+                <fieldset class="admin-fieldset">
+                  <legend>Movie metadata</legend>
+
+                  <label class="field">
+                    <span>Year / Yil</span>
+                    <input type="number" name="year" min="1900" max="2100" value="2026" required />
+                  </label>
+
+                  <label class="field">
+                    <span>Country / Davlat</span>
+                    <input type="text" name="country" placeholder="AQSh, Buyuk Britaniya" required />
+                  </label>
+
+                  <div class="field field--wide">
+                    <span>Genre / Janr</span>
+                    <div class="multi-select" data-multi-select="genres">
+                      <select class="multi-select__native" name="genres" multiple required tabindex="-1" aria-label="Janrlar" data-shared-genres>
+                        <option value="Action">Action</option>
+                        <option value="Adventure">Adventure</option>
+                        <option value="Animation">Animation</option>
+                        <option value="Anime">Anime</option>
+                        <option value="Biography">Biography</option>
+                        <option value="Comedy">Comedy</option>
+                        <option value="Crime">Crime</option>
+                        <option value="Detective">Detective</option>
+                        <option value="Documentary">Documentary</option>
+                        <option value="Drama">Drama</option>
+                        <option value="Family">Family</option>
+                        <option value="Fantasy">Fantasy</option>
+                        <option value="History">History</option>
+                        <option value="Horror">Horror</option>
+                        <option value="Martial Arts">Martial Arts</option>
+                        <option value="Music">Music</option>
+                        <option value="Musical">Musical</option>
+                        <option value="Mystery">Mystery</option>
+                        <option value="Romance">Romance</option>
+                        <option value="Sci-Fi">Sci-Fi</option>
+                        <option value="Sport">Sport</option>
+                        <option value="Superhero">Superhero</option>
+                        <option value="Thriller">Thriller</option>
+                        <option value="War">War</option>
+                        <option value="Western">Western</option>
+                      </select>
+                      <div class="multi-select__control">
+                        <div class="multi-select__tags" data-selected-tags="genres"></div>
+                        <button class="multi-select__toggle" type="button" data-multi-toggle="genres" aria-expanded="false">
+                          Janr tanlash
+                        </button>
+                      </div>
+                      <div class="multi-select__menu" data-multi-menu="genres" hidden></div>
+                      <p class="field-error" data-field-error="genres"></p>
+                    </div>
+                  </div>
+
+                  <div class="field field--wide">
+                    <span>Languages / Til</span>
+                    <div class="multi-select" data-multi-select="languages">
+                      <select class="multi-select__native" name="languages" multiple required tabindex="-1" aria-label="Tillar">
+                        <option value="O‘zbek">O‘zbek</option>
+                        <option value="Rus">Rus</option>
+                        <option value="Ingliz">Ingliz</option>
+                        <option value="Turk">Turk</option>
+                        <option value="Hind">Hind</option>
+                        <option value="Koreys">Koreys</option>
+                        <option value="Yapon">Yapon</option>
+                        <option value="Original">Original</option>
+                      </select>
+                      <div class="multi-select__control">
+                        <div class="multi-select__tags" data-selected-tags="languages"></div>
+                        <button class="multi-select__toggle" type="button" data-multi-toggle="languages" aria-expanded="false">
+                          Til tanlash
+                        </button>
+                      </div>
+                      <div class="multi-select__menu" data-multi-menu="languages" hidden></div>
+                      <p class="field-error" data-field-error="languages"></p>
+                    </div>
+                  </div>
+
+                  <label class="field">
+                    <span>Duration / Davomiyligi</span>
+                    <input type="text" name="duration" placeholder="180 daqiqa" required />
+                  </label>
+
+                  <label class="field">
+                    <span>Director / Rejissor</span>
+                    <input type="text" name="director" placeholder="Christopher Nolan" required />
+                  </label>
+
+                  <label class="field">
+                    <span>Rating / Reyting</span>
+                    <input type="number" name="rating" min="0" max="10" step="0.1" value="8.5" required />
+                  </label>
+
+                  <label class="field">
+                    <span>Status / Holati</span>
+                    <select name="status" required>
+                      <option value="Published">Published</option>
+                      <option value="Draft">Draft</option>
+                    </select>
+                  </label>
+                </fieldset>
+
+                <fieldset class="admin-fieldset">
+                  <legend>Media</legend>
+
+                  <label class="field">
+                    <span>Poster image upload</span>
+                    <input type="file" name="posterFile" accept="image/png,image/jpeg,image/webp" />
+                  </label>
+
+                  <label class="field">
+                    <span>Poster image URL</span>
+                    <input type="url" name="posterUrl" placeholder="https://example.com/poster.jpg" />
+                  </label>
+                </fieldset>
+
+                <fieldset class="admin-fieldset">
+                  <legend>Quality and video</legend>
+
+                  <label class="field">
+                    <span>Quality / Sifat</span>
+                    <input type="text" name="quality" value="Full HD" readonly />
+                  </label>
+
+                  <label class="field">
+                    <span>Video source / Video</span>
+                    <select name="videoSource" required>
+                      <option value="WEB-DL">WEB-DL</option>
+                      <option value="WEBRip">WEBRip</option>
+                      <option value="BluRay">BluRay</option>
+                      <option value="BDRip">BDRip</option>
+                      <option value="HDRip">HDRip</option>
+                      <option value="HDTV">HDTV</option>
+                      <option value="DVDRip">DVDRip</option>
+                      <option value="CAMRip">CAMRip</option>
+                      <option value="TS">TS</option>
+                    </select>
+                  </label>
+
+                </fieldset>
+
+                <fieldset class="admin-fieldset">
+                  <legend>Download</legend>
+
+                  <label class="field">
+                    <span>1080p Download URL</span>
+                    <input type="url" name="download1080pUrl" placeholder="https://example.com/download/film-1080p.mp4" required />
+                  </label>
+
+                  <label class="field">
+                    <span>Format</span>
+                    <select name="format" required>
+                      <option value="MP4" selected>MP4</option>
+                      <option value="MKV">MKV</option>
+                      <option value="AVI">AVI</option>
+                      <option value="MOV">MOV</option>
+                    </select>
+                  </label>
+
+                  <label class="field">
+                    <span>File size</span>
+                    <input type="text" name="download1080pSize" placeholder="2.4 GB" required />
+                  </label>
+                </fieldset>
+
+                <div class="admin-form__actions">
+                  <button class="button button--primary admin-form__submit" type="submit">
+                    Add Movie
+                  </button>
+                  <button class="button button--ghost" type="reset" id="admin-cancel-edit">
+                    Cancel
+                  </button>
+                </div>
+
+                <p class="admin-form__feedback" id="admin-feedback" role="status"></p>
+              </form>
+
+              <div class="admin-side-panel">
+                <aside class="admin-preview preview-panel" aria-labelledby="admin-preview-title">
+                  <div class="admin-preview__header">
+                    <h3 id="admin-preview-title">Ko'rinish oldindan ko'rish</h3>
+                    <button class="button button--ghost admin-preview__edit" type="button" id="admin-preview-edit" disabled hidden>
+                      <i class="ti ti-edit" aria-hidden="true"></i>
+                      Edit
+                    </button>
+                  </div>
+                  <article class="preview-card">
+                    <div class="preview-card__poster-wrap">
+                      <img class="preview-card__poster" id="preview-poster" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='780' viewBox='0 0 520 780'%3E%3Crect width='520' height='780' fill='%23121722'/%3E%3Crect x='34' y='34' width='452' height='712' rx='28' fill='none' stroke='%23283144' stroke-width='4'/%3E%3Ctext x='260' y='390' fill='%23aab2c2' font-family='Arial,sans-serif' font-size='34' text-anchor='middle'%3EPoster%3C/text%3E%3C/svg%3E" alt="Poster oldindan ko'rish" />
+                      <span class="preview-card__quality">Full HD<br />1080p</span>
+                    </div>
+                    <div class="preview-card__body">
+                      <h4 id="preview-title">Yangi film</h4>
+                      <p id="preview-original">Original nomi</p>
+                      <p id="preview-meta">2026 • Janr • O‘zbek</p>
+                      <div class="preview-card__tags">
+                        <span id="preview-quality">Full HD</span>
+                        <span id="preview-video">WEB-DL</span>
+                        <span id="preview-format">MP4</span>
+                        <span id="preview-size">2.4 GB</span>
+                      </div>
+                      <button class="preview-download" type="button">
+                        1080p yuklab olish
+                      </button>
+                    </div>
+                  </article>
+                </aside>
+
+                <section class="admin-manager added-movies-compact added-movies-panel" aria-labelledby="admin-manager-title">
+                  <div class="admin-manager__header">
+                    <div>
+                      <h3 id="admin-manager-title">Qo'shilgan kinolar</h3>
+                      <p>MongoDB'dagi kontentni ko'rish, tahrirlash yoki o'chirish.</p>
+                    </div>
+                    <button class="button button--ghost" type="button" id="admin-refresh-movies">
+                      Yangilash
+                    </button>
+                  </div>
+                  <div class="admin-movie-list" id="admin-movie-list" aria-live="polite"></div>
+                </section>
+              </div>
+            </div>
+            </section>
+
+            <section class="admin-view" id="admin-series-panel" data-admin-panel="series" aria-labelledby="admin-series-title" hidden>
+              <div class="admin-section-heading">
+                <h3 id="admin-series-title">Series Management</h3>
+                <p>Seriallar, mavsumlar va qismlar alohida saqlanadi.</p>
+              </div>
+
+              <div class="admin-series-grid admin-layout admin-main-grid">
+                <div class="admin-series-forms">
+                  <form class="admin-form admin-series-form" id="series-create-form" novalidate>
+                    <fieldset class="admin-fieldset">
+                      <legend>Asosiy ma'lumotlar</legend>
+
+                      <label class="field">
+                        <span>Uzbek Title / Serial nomi</span>
+                        <input type="text" name="titleUz" placeholder="Serial nomi" required />
+                      </label>
+
+                      <label class="field">
+                        <span>Original Title</span>
+                        <input type="text" name="originalTitle" placeholder="Original nomi" required />
+                      </label>
+
+                      <label class="field">
+                        <span>Slug</span>
+                        <input type="text" name="slug" placeholder="serial-nomi" required />
+                      </label>
+
+                      <label class="field field--wide">
+                        <span>Description / Tavsif</span>
+                        <textarea name="description" rows="4" maxlength="1000" placeholder="Serial haqida qisqacha..." required></textarea>
+                      </label>
+                    </fieldset>
+
+                    <fieldset class="admin-fieldset">
+                      <legend>Series metadata</legend>
+
+                      <label class="field">
+                        <span>Year / Yil</span>
+                        <input type="number" name="year" min="1900" max="2100" value="2026" required />
+                      </label>
+
+                      <label class="field">
+                        <span>Country / Davlat</span>
+                        <input type="text" name="country" placeholder="AQSh, Koreya" required />
+                      </label>
+
+                      <label class="field">
+                        <span>Duration / Davomiyligi</span>
+                        <input type="text" name="duration" placeholder="45 min" required />
+                      </label>
+
+                      <div class="field field--wide">
+                        <span>Genre / Janr</span>
+                        <div class="multi-select" data-multi-select="genres">
+                          <select class="multi-select__native" name="genres" multiple required tabindex="-1" aria-label="Serial janrlari" data-shared-genres></select>
+                          <div class="multi-select__control">
+                            <div class="multi-select__tags" data-selected-tags="genres"></div>
+                            <button class="multi-select__toggle" type="button" data-multi-toggle="genres" aria-expanded="false">
+                              Janr tanlash
+                            </button>
+                          </div>
+                          <div class="multi-select__menu" data-multi-menu="genres" hidden></div>
+                          <p class="field-error" data-field-error="genres"></p>
+                        </div>
+                      </div>
+
+                      <div class="field field--wide">
+                        <span>Languages / Til</span>
+                        <div class="multi-select" data-multi-select="languages">
+                          <select class="multi-select__native" name="languages" multiple required tabindex="-1" aria-label="Serial tillari">
+                            <option value="O‘zbek">O‘zbek</option>
+                            <option value="Rus">Rus</option>
+                            <option value="Ingliz">Ingliz</option>
+                            <option value="Turk">Turk</option>
+                            <option value="Hind">Hind</option>
+                            <option value="Koreys">Koreys</option>
+                            <option value="Yapon">Yapon</option>
+                            <option value="Original">Original</option>
+                          </select>
+                          <div class="multi-select__control">
+                            <div class="multi-select__tags" data-selected-tags="languages"></div>
+                            <button class="multi-select__toggle" type="button" data-multi-toggle="languages" aria-expanded="false">
+                              Til tanlash
+                            </button>
+                          </div>
+                          <div class="multi-select__menu" data-multi-menu="languages" hidden></div>
+                          <p class="field-error" data-field-error="languages"></p>
+                        </div>
+                      </div>
+
+                      <label class="field">
+                        <span>Seasons</span>
+                        <input type="number" name="seasonsCount" min="0" placeholder="1" />
+                      </label>
+
+                      <label class="field">
+                        <span>Episodes / Qismlar</span>
+                        <input type="number" name="episodesCount" min="0" placeholder="8" />
+                      </label>
+
+                      <label class="field">
+                        <span>Rating / Reyting</span>
+                        <input type="number" name="rating" min="0" max="10" step="0.1" value="8.0" required />
+                      </label>
+
+                      <label class="field">
+                        <span>Status / Holati</span>
+                        <select name="status" required>
+                          <option value="Published">Published</option>
+                          <option value="Draft">Draft</option>
+                        </select>
+                      </label>
+                    </fieldset>
+
+                    <fieldset class="admin-fieldset">
+                      <legend>Media</legend>
+
+                      <label class="field">
+                        <span>Poster image upload</span>
+                        <input type="file" name="posterFile" accept="image/png,image/jpeg,image/webp" />
+                      </label>
+
+                      <label class="field">
+                        <span>Poster image URL</span>
+                        <input type="url" name="posterUrl" placeholder="https://example.com/poster.jpg" />
+                      </label>
+                    </fieldset>
+
+                    <fieldset class="admin-fieldset series-episode-fieldset">
+                      <legend>Episodes</legend>
+                      <div class="series-episode-toolbar field--wide">
+                        <p>Serial qismlarini shu yerda qo'shing. Har bir qism o'z download/video havolasiga ega.</p>
+                        <button class="button button--ghost" type="button" data-add-episode="create">
+                          <i class="ti ti-plus" aria-hidden="true"></i>
+                          Add Episode
+                        </button>
+                      </div>
+                      <div class="series-episode-rows field--wide" id="series-create-episodes"></div>
+                    </fieldset>
+
+                    <div class="admin-form__actions">
+                      <button class="button button--ghost" type="button" data-series-preview-form="create">
+                        <i class="ti ti-eye" aria-hidden="true"></i>
+                        Preview
+                      </button>
+                      <button class="button button--primary" type="submit">
+                        <i class="ti ti-plus" aria-hidden="true"></i>
+                        Create Series
+                      </button>
+                      <button class="button button--ghost" type="reset">
+                        Clear
+                      </button>
+                    </div>
+                  </form>
+
+                  <section class="admin-edit-panel" id="series-edit-panel" aria-labelledby="series-edit-title" hidden>
+                    <div class="admin-edit-panel__header">
+                      <h4 id="series-edit-title">Edit Series</h4>
+                      <button class="button button--ghost" type="button" id="series-cancel-edit">
+                        <i class="ti ti-x" aria-hidden="true"></i>
+                        Cancel Edit
+                      </button>
+                    </div>
+
+                    <form class="admin-form admin-series-form" id="series-edit-form" novalidate>
+                      <fieldset class="admin-fieldset">
+                        <legend>Asosiy ma'lumotlar</legend>
+
+                        <label class="field">
+                          <span>Uzbek Title / Serial nomi</span>
+                          <input type="text" name="titleUz" required />
+                        </label>
+
+                        <label class="field">
+                          <span>Original Title</span>
+                          <input type="text" name="originalTitle" required />
+                        </label>
+
+                        <label class="field">
+                          <span>Slug</span>
+                          <input type="text" name="slug" required readonly />
+                        </label>
+
+                        <label class="field field--wide">
+                          <span>Description / Tavsif</span>
+                          <textarea name="description" rows="4" maxlength="1000" required></textarea>
+                        </label>
+                      </fieldset>
+
+                      <fieldset class="admin-fieldset">
+                        <legend>Series metadata</legend>
+
+                        <label class="field">
+                          <span>Year / Yil</span>
+                          <input type="number" name="year" min="1900" max="2100" required />
+                        </label>
+
+                        <label class="field">
+                          <span>Country / Davlat</span>
+                          <input type="text" name="country" required />
+                        </label>
+
+                        <label class="field">
+                          <span>Duration / Davomiyligi</span>
+                          <input type="text" name="duration" required />
+                        </label>
+
+                        <div class="field field--wide">
+                          <span>Genre / Janr</span>
+                          <div class="multi-select" data-multi-select="genres">
+                            <select class="multi-select__native" name="genres" multiple required tabindex="-1" aria-label="Serial janrlari" data-shared-genres></select>
+                            <div class="multi-select__control">
+                              <div class="multi-select__tags" data-selected-tags="genres"></div>
+                              <button class="multi-select__toggle" type="button" data-multi-toggle="genres" aria-expanded="false">
+                                Janr tanlash
+                              </button>
+                            </div>
+                            <div class="multi-select__menu" data-multi-menu="genres" hidden></div>
+                            <p class="field-error" data-field-error="genres"></p>
+                          </div>
+                        </div>
+
+                        <div class="field field--wide">
+                          <span>Languages / Til</span>
+                          <div class="multi-select" data-multi-select="languages">
+                            <select class="multi-select__native" name="languages" multiple required tabindex="-1" aria-label="Serial tillari">
+                              <option value="O‘zbek">O‘zbek</option>
+                              <option value="Rus">Rus</option>
+                              <option value="Ingliz">Ingliz</option>
+                              <option value="Turk">Turk</option>
+                              <option value="Hind">Hind</option>
+                              <option value="Koreys">Koreys</option>
+                              <option value="Yapon">Yapon</option>
+                              <option value="Original">Original</option>
+                            </select>
+                            <div class="multi-select__control">
+                              <div class="multi-select__tags" data-selected-tags="languages"></div>
+                              <button class="multi-select__toggle" type="button" data-multi-toggle="languages" aria-expanded="false">
+                                Til tanlash
+                              </button>
+                            </div>
+                            <div class="multi-select__menu" data-multi-menu="languages" hidden></div>
+                            <p class="field-error" data-field-error="languages"></p>
+                          </div>
+                        </div>
+
+                        <label class="field">
+                          <span>Seasons</span>
+                          <input type="number" name="seasonsCount" min="0" />
+                        </label>
+
+                        <label class="field">
+                          <span>Episodes / Qismlar</span>
+                          <input type="number" name="episodesCount" min="0" />
+                        </label>
+
+                        <label class="field">
+                          <span>Rating / Reyting</span>
+                          <input type="number" name="rating" min="0" max="10" step="0.1" required />
+                        </label>
+
+                        <label class="field">
+                          <span>Status / Holati</span>
+                          <select name="status" required>
+                            <option value="Published">Published</option>
+                            <option value="Draft">Draft</option>
+                          </select>
+                        </label>
+                      </fieldset>
+
+                      <fieldset class="admin-fieldset">
+                        <legend>Media</legend>
+
+                        <label class="field">
+                          <span>Poster image upload</span>
+                          <input type="file" name="posterFile" accept="image/png,image/jpeg,image/webp" />
+                        </label>
+
+                        <label class="field">
+                          <span>Poster image URL</span>
+                          <input type="url" name="posterUrl" />
+                        </label>
+                      </fieldset>
+
+                      <fieldset class="admin-fieldset series-episode-fieldset">
+                        <legend>Episodes</legend>
+                        <div class="series-episode-toolbar field--wide">
+                          <p>Edit existing episodes or add more before saving the series.</p>
+                          <button class="button button--ghost" type="button" data-add-episode="edit">
+                            <i class="ti ti-plus" aria-hidden="true"></i>
+                            Add Episode
+                          </button>
+                        </div>
+                        <div class="series-episode-rows field--wide" id="series-edit-episodes"></div>
+                      </fieldset>
+
+                      <div class="admin-form__actions">
+                        <button class="button button--ghost" type="button" data-series-preview-form="edit">
+                          <i class="ti ti-eye" aria-hidden="true"></i>
+                          Preview
+                        </button>
+                        <button class="button button--primary" type="submit">
+                          <i class="ti ti-device-floppy" aria-hidden="true"></i>
+                          Save Series
+                        </button>
+                      </div>
+                    </form>
+                  </section>
+
+                  <section class="admin-preview preview-panel admin-series-preview" id="series-preview-panel" aria-labelledby="series-preview-title">
+                    <div class="admin-preview__header">
+                      <h3 id="series-preview-title">Ko'rinish oldindan ko'rish</h3>
+                      <button class="button button--ghost admin-preview__edit" type="button" id="series-preview-close" hidden>
+                        <i class="ti ti-x" aria-hidden="true"></i>
+                        Clear
+                      </button>
+                    </div>
+                    <div id="series-preview-content"></div>
+                  </section>
+
+                  <section class="admin-episode-panel" id="series-episode-panel" aria-labelledby="series-episode-title" hidden>
+                    <div class="admin-edit-panel__header">
+                      <div>
+                        <h4 id="series-episode-title">Episodes</h4>
+                        <p id="series-episode-subtitle"></p>
+                      </div>
+                      <button class="button button--ghost" type="button" id="series-close-episodes">
+                        <i class="ti ti-x" aria-hidden="true"></i>
+                        Close
+                      </button>
+                    </div>
+
+                    <form class="episode-form" id="series-episode-form" novalidate>
+                      <label class="field">
+                        <span>Episode title</span>
+                        <input type="text" name="title" required />
+                      </label>
+
+                      <label class="field">
+                        <span>Episode number</span>
+                        <input type="number" name="episodeNumber" min="1" required />
+                      </label>
+
+                      <label class="field">
+                        <span>Season number</span>
+                        <input type="number" name="seasonNumber" min="1" required />
+                      </label>
+
+                      <label class="field">
+                        <span>Video/download link</span>
+                        <input type="url" name="videoUrl" required />
+                      </label>
+
+                      <label class="field field--wide">
+                        <span>Description</span>
+                        <textarea name="description" rows="3" maxlength="600"></textarea>
+                      </label>
+
+                      <div class="admin-form__actions">
+                        <button class="button button--primary" type="submit" id="series-episode-submit">
+                          <i class="ti ti-plus" aria-hidden="true"></i>
+                          Add Episode
+                        </button>
+                        <button class="button button--ghost" type="button" id="series-episode-cancel">
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+
+                    <div class="episode-list" id="series-episode-list" aria-live="polite"></div>
+                  </section>
+
+                  <p class="admin-form__feedback" id="series-feedback" role="status"></p>
+                </div>
+
+                <section class="admin-manager added-movies-compact added-movies-panel admin-series-manager" aria-labelledby="admin-series-manager-title">
+                  <div class="admin-manager__header">
+                    <div>
+                      <h3 id="admin-series-manager-title">Qo'shilgan seriallar</h3>
+                      <p>MongoDB'dagi seriallarni ko'rish, tahrirlash yoki o'chirish.</p>
+                    </div>
+                    <button class="button button--ghost" type="button" id="admin-refresh-series">
+                      Yangilash
+                    </button>
+                  </div>
+                  <div class="admin-series-list" id="admin-series-list" aria-live="polite"></div>
+                </section>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+
+      <!-- Footer: stays pinned to the bottom through the root flex layout -->
+      <footer>© 2026 kinotime.net. All rights reserved.</footer>
+    </div>
+  </body>
+</html>
