@@ -522,6 +522,15 @@ a {
   color: #c4b5fd;
 }
 
+.profile-menu__item--admin:hover,
+.profile-menu__item--admin:focus-visible {
+  background: linear-gradient(135deg, rgba(147, 51, 234, 0.24), rgba(124, 58, 237, 0.16));
+}
+
+.profile-menu__item--admin i {
+  color: #c084fc;
+}
+
 .profile-menu__divider {
   height: 1px;
   margin: 5px 8px;

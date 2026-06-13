@@ -143,6 +143,10 @@
                   <i class="ti ti-user-circle" aria-hidden="true"></i>
                   Profil
                 </button>
+                <button class="profile-menu__item profile-menu__item--admin" type="button" id="profile-admin-link" role="menuitem" hidden>
+                  <i class="ti ti-shield-star" aria-hidden="true"></i>
+                  Admin panel
+                </button>
                 <button class="profile-menu__item" type="button" id="settings-page-link" role="menuitem">
                   <i class="ti ti-settings" aria-hidden="true"></i>
                   Sozlamalar
@@ -216,9 +220,6 @@
 
         <!-- Movie detail page: rendered from app.js when a card is opened -->
         <section class="detail-page" id="detail-page" hidden aria-label="Film haqida ma'lumot">
-          <button class="back-button" type="button" data-back-to-catalog hidden>
-            Filmlarga qaytish
-          </button>
           <div id="detail-content"></div>
         </section>
 

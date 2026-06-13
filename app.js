@@ -539,6 +539,7 @@ const profileDropdown = document.querySelector("#profile-dropdown");
 const profileAvatar = document.querySelector("#profile-avatar");
 const profileName = document.querySelector("#profile-name");
 const profilePageLink = document.querySelector("#profile-page-link");
+const profileAdminLink = document.querySelector("#profile-admin-link");
 const settingsPageLink = document.querySelector("#settings-page-link");
 const logoutButton = document.querySelector("#logout-button");
 const profilePage = document.querySelector("#profile-page");
@@ -577,6 +578,7 @@ const USERS_STORAGE_KEY = "kinotime.users";
 const SESSION_STORAGE_KEY = "kinotime.session";
 const DOWNLOAD_HISTORY_STORAGE_KEY = "kinotime.downloadHistory";
 const PASSWORD_ITERATIONS = 120000;
+const HASH_SECTION_ROUTES = new Set(["", "home", "filmlar", "seriallar", "admin", "login", "signup", "profile", "settings"]);
 
 // Helpers: normalize text, build tags and render list values consistently.
 function normalizeBaseUrl(value) {
@@ -1133,7 +1135,11 @@ async function loadCatalogFromApi() {
 
   isCatalogLoading = false;
   syncCatalogItems();
-  renderCards();
+  const didResolveDetailRoute = resolveHashDetailRoute();
+
+  if (!didResolveDetailRoute) {
+    renderCards();
+  }
 
   if (hasAdminAccess()) {
     isAdminMoviesLoading = false;
@@ -1382,6 +1388,87 @@ function saveUsers(users) {
 
 function getUserIdentity(user = currentUser) {
   return user?.id || user?.email || "";
+}
+
+function decodeHashValue(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch (error) {
+    return value;
+  }
+}
+
+function getHashRouteValue() {
+  return decodeHashValue(window.location.hash.replace(/^#/, "")).trim();
+}
+
+function isSectionHashRoute(value) {
+  return HASH_SECTION_ROUTES.has(value);
+}
+
+function getCatalogItemSlug(item) {
+  return String(item?.slug ?? "").trim();
+}
+
+function findCatalogItemBySlug(slug) {
+  const routeSlug = String(slug ?? "").trim();
+
+  if (!routeSlug) {
+    return null;
+  }
+
+  const movie = movieCatalogItems.map(forceMovieSchema).find((item) => getCatalogItemSlug(item) === routeSlug);
+
+  if (movie) {
+    return movie;
+  }
+
+  return seriesCatalogItems.map(normalizeSeriesSchema).find((item) => getCatalogItemSlug(item) === routeSlug) || null;
+}
+
+function openDetailRoute(slug) {
+  const item = findCatalogItemBySlug(slug);
+
+  if (!item) {
+    return false;
+  }
+
+  openDetailPage(item, { updateHash: false });
+  return true;
+}
+
+function resolveHashDetailRoute() {
+  const hashValue = getHashRouteValue();
+
+  if (!hashValue || isSectionHashRoute(hashValue)) {
+    return false;
+  }
+
+  if (openDetailRoute(hashValue)) {
+    return true;
+  }
+
+  if (!isCatalogLoading) {
+    setSection("filmlar", false);
+  }
+
+  return false;
+}
+
+function routeFromCurrentHash({ shouldResetSearch = false } = {}) {
+  const hashValue = getHashRouteValue();
+
+  if (hashValue && !isSectionHashRoute(hashValue)) {
+    if (openDetailRoute(hashValue)) {
+      return true;
+    }
+
+    setSection("filmlar", shouldResetSearch);
+    return false;
+  }
+
+  setSection(getSectionFromHash(), shouldResetSearch);
+  return true;
 }
 
 function getStoredSession() {
@@ -2089,28 +2176,34 @@ async function deleteMovieBySlug(slug) {
 }
 
 function getSectionFromHash() {
-  if (window.location.hash === "#seriallar") {
+  const hashValue = getHashRouteValue();
+
+  if (hashValue === "seriallar") {
     return "seriallar";
   }
 
-  if (window.location.hash === "#admin") {
+  if (hashValue === "admin") {
     return "admin";
   }
 
-  if (window.location.hash === "#login") {
+  if (hashValue === "login") {
     return "login";
   }
 
-  if (window.location.hash === "#signup") {
+  if (hashValue === "signup") {
     return "signup";
   }
 
-  if (window.location.hash === "#profile") {
+  if (hashValue === "profile") {
     return "profile";
   }
 
-  if (window.location.hash === "#settings") {
+  if (hashValue === "settings") {
     return "settings";
+  }
+
+  if (!hashValue || hashValue === "home" || hashValue === "filmlar") {
+    return "filmlar";
   }
 
   const routeName = window.location.pathname.replace(/\/+$/, "").split("/").pop();
@@ -3792,8 +3885,8 @@ function setSection(section, shouldResetSearch = false) {
 }
 
 // Detail page: show metadata and movie downloads or series episodes.
-function openDetailPage(itemId) {
-  const item = findMovieById(itemId);
+function openDetailPage(itemOrId, options = {}) {
+  const item = typeof itemOrId === "object" && itemOrId !== null ? normalizeCatalogItem(itemOrId) : findMovieById(itemOrId);
 
   if (!item) {
     return;
@@ -3920,7 +4013,14 @@ function openDetailPage(itemId) {
     </article>
   `;
 
-  history.pushState(null, "", `#${item.id}`);
+  if (options.updateHash !== false) {
+    const itemSlug = getCatalogItemSlug(item);
+
+    if (itemSlug && getHashRouteValue() !== itemSlug) {
+      history.pushState(null, "", `#${encodeURIComponent(itemSlug)}`);
+    }
+  }
+
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -3967,6 +4067,9 @@ function updateAuthUI() {
   profileMenu.hidden = !isLoggedIn;
 
   if (!isLoggedIn) {
+    if (profileAdminLink) {
+      profileAdminLink.hidden = true;
+    }
     closeProfileDropdown();
     return;
   }
@@ -3974,6 +4077,9 @@ function updateAuthUI() {
   const label = getUserLabel(currentUser);
   renderProfileAvatar(currentUser, label);
   profileName.textContent = label;
+  if (profileAdminLink) {
+    profileAdminLink.hidden = !hasAdminAccess();
+  }
 }
 
 hydrateSharedGenreSelects();
@@ -4000,9 +4106,9 @@ sectionLinks.forEach((link) => {
   });
 });
 
-backToCatalogButton.addEventListener("click", () => {
-  history.pushState(null, "", `#${activeDetailSection}`);
-  setSection(activeDetailSection, false);
+backToCatalogButton?.addEventListener("click", () => {
+  history.pushState(null, "", `${window.location.pathname}${window.location.search}`);
+  setSection("filmlar", false);
 });
 
 searchInput.addEventListener("input", (event) => {
@@ -4069,7 +4175,23 @@ kinoGrid.addEventListener("click", (event) => {
   const card = event.target.closest(".film-card");
 
   if (card) {
-    openDetailPage(card.dataset.filmId);
+    const item = findMovieById(card.dataset.filmId);
+    const itemSlug = getCatalogItemSlug(item);
+
+    if (!item) {
+      return;
+    }
+
+    if (itemSlug) {
+      if (getHashRouteValue() === itemSlug) {
+        openDetailPage(item, { updateHash: false });
+      } else {
+        window.location.hash = itemSlug;
+      }
+      return;
+    }
+
+    openDetailPage(item);
   }
 });
 
@@ -4150,6 +4272,12 @@ profilePageLink?.addEventListener("click", () => {
   closeProfileDropdown();
   history.pushState(null, "", "#profile");
   setSection("profile", true);
+});
+
+profileAdminLink?.addEventListener("click", () => {
+  closeProfileDropdown();
+  history.pushState(null, "", "#admin");
+  setSection("admin", true);
 });
 
 settingsPageLink?.addEventListener("click", () => {
@@ -5020,14 +5148,18 @@ seriesCloseEpisodes.addEventListener("click", () => {
   renderAdminSeriesList();
 });
 
+window.addEventListener("hashchange", () => {
+  routeFromCurrentHash({ shouldResetSearch: true });
+});
+
 window.addEventListener("popstate", () => {
-  setSection(getSectionFromHash(), true);
+  routeFromCurrentHash({ shouldResetSearch: true });
 });
 
 async function initializeApp() {
   currentUser = await restoreStoredSession();
   updateAuthUI();
-  setSection(getSectionFromHash(), false);
+  routeFromCurrentHash({ shouldResetSearch: false });
   await loadCatalogFromApi();
 }
 
