@@ -6,6 +6,8 @@ const databaseName = process.env.MONGODB_DB || "kinotime";
 const moviesCollectionName = process.env.MONGODB_MOVIES_COLLECTION || "movies";
 const seriesCollectionName = process.env.MONGODB_SERIES_COLLECTION || "series";
 const assetsCollectionName = process.env.MONGODB_ASSETS_COLLECTION || "assets";
+const usersCollectionName = process.env.MONGODB_USERS_COLLECTION || "users";
+const downloadHistoryCollectionName = process.env.MONGODB_DOWNLOAD_HISTORY_COLLECTION || "downloadHistory";
 const dnsServers = (process.env.MONGODB_DNS_SERVERS || "8.8.8.8,1.1.1.1")
   .split(",")
   .map((server) => server.trim())
@@ -19,6 +21,8 @@ let clientPromise;
 let movieIndexesReady = false;
 let seriesIndexesReady = false;
 let assetIndexesReady = false;
+let userIndexesReady = false;
+let downloadHistoryIndexesReady = false;
 
 function isMongoConfigured() {
   return Boolean(mongoUri);
@@ -81,10 +85,38 @@ async function getAssetsCollection() {
   return collection;
 }
 
+async function getUsersCollection() {
+  const db = await getDatabase();
+  const collection = db.collection(usersCollectionName);
+
+  if (!userIndexesReady) {
+    await collection.createIndex({ email: 1 }, { unique: true });
+    await collection.createIndex({ createdAt: -1 });
+    userIndexesReady = true;
+  }
+
+  return collection;
+}
+
+async function getDownloadHistoryCollection() {
+  const db = await getDatabase();
+  const collection = db.collection(downloadHistoryCollectionName);
+
+  if (!downloadHistoryIndexesReady) {
+    await collection.createIndex({ userId: 1, downloadedAt: -1 });
+    await collection.createIndex({ userId: 1, movieId: 1, quality: 1 }, { unique: true });
+    downloadHistoryIndexesReady = true;
+  }
+
+  return collection;
+}
+
 module.exports = {
   getAssetsCollection,
   getDatabase,
+  getDownloadHistoryCollection,
   getMoviesCollection,
   getSeriesCollection,
+  getUsersCollection,
   isMongoConfigured,
 };

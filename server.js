@@ -8,8 +8,10 @@ const { ObjectId } = require("mongodb");
 const {
   getAssetsCollection,
   getDatabase,
+  getDownloadHistoryCollection,
   getMoviesCollection,
   getSeriesCollection,
+  getUsersCollection,
   isMongoConfigured,
 } = require("./db");
 
@@ -433,17 +435,22 @@ function getAuthSettingsError() {
   return missing.length ? `${missing.join(", ")} configured emas.` : "";
 }
 
+function getJwtSettingsError() {
+  return jwtSecret ? "" : "JWT_SECRET configured emas.";
+}
+
 function base64UrlEncode(value) {
   return Buffer.from(value).toString("base64url");
 }
 
-function createAdminToken() {
+function createAuthToken(user) {
   const now = Math.floor(Date.now() / 1000);
   const header = base64UrlEncode(JSON.stringify({ alg: "HS256", typ: "JWT" }));
   const payload = base64UrlEncode(
     JSON.stringify({
-      sub: adminEmail,
-      role: "admin",
+      sub: user.id || user.email,
+      email: user.email,
+      role: user.role || "user",
       iat: now,
       exp: now + 60 * 60 * 12,
     }),
@@ -456,7 +463,11 @@ function createAdminToken() {
   return `${header}.${payload}.${signature}`;
 }
 
-function verifyAdminToken(token) {
+function createAdminToken() {
+  return createAuthToken(getAdminUser());
+}
+
+function verifyAuthToken(token) {
   if (!token || !jwtSecret) {
     return null;
   }
@@ -482,7 +493,7 @@ function verifyAdminToken(token) {
     const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
     const now = Math.floor(Date.now() / 1000);
 
-    if (decoded.exp <= now || decoded.role !== "admin" || decoded.sub !== adminEmail) {
+    if (decoded.exp <= now || !decoded.sub || !decoded.role) {
       return null;
     }
 
@@ -490,6 +501,16 @@ function verifyAdminToken(token) {
   } catch (error) {
     return null;
   }
+}
+
+function verifyAdminToken(token) {
+  const decoded = verifyAuthToken(token);
+
+  if (!decoded || decoded.role !== "admin" || (decoded.email || decoded.sub) !== adminEmail) {
+    return null;
+  }
+
+  return decoded;
 }
 
 function getBearerToken(req) {
@@ -508,10 +529,79 @@ function timingSafeStringEqual(first, second) {
 
 function getAdminUser() {
   return {
+    id: adminEmail || "admin",
     email: adminEmail,
     name: adminEmail.split("@")[0] || "Admin",
     role: "admin",
+    createdAt: "",
   };
+}
+
+function sanitizeUser(document) {
+  if (!document) {
+    return null;
+  }
+
+  const id = document._id?.toString?.() || document.id || document.email;
+
+  return {
+    id,
+    email: document.email,
+    name: document.name || document.email,
+    role: document.role === "admin" ? "admin" : "user",
+    createdAt: document.createdAt || "",
+  };
+}
+
+function createPasswordRecord(password, salt = crypto.randomBytes(16).toString("base64")) {
+  const iterations = 120000;
+  const hash = crypto.pbkdf2Sync(String(password), salt, iterations, 32, "sha256").toString("base64");
+
+  return {
+    hash,
+    salt,
+    iterations,
+  };
+}
+
+function verifyPassword(password, user) {
+  if (!user?.passwordHash || !user?.passwordSalt) {
+    return false;
+  }
+
+  const iterations = Number(user.passwordIterations || 120000);
+  const hash = crypto.pbkdf2Sync(String(password), user.passwordSalt, iterations, 32, "sha256").toString("base64");
+  const provided = Buffer.from(hash);
+  const stored = Buffer.from(user.passwordHash);
+
+  return provided.length === stored.length && crypto.timingSafeEqual(provided, stored);
+}
+
+async function getAuthenticatedUser(req) {
+  const tokenPayload = verifyAuthToken(getBearerToken(req));
+
+  if (!tokenPayload) {
+    return null;
+  }
+
+  if (tokenPayload.role === "admin" && (tokenPayload.email || tokenPayload.sub) === adminEmail) {
+    return getAdminUser();
+  }
+
+  if (!isMongoConfigured()) {
+    return null;
+  }
+
+  const collection = await getUsersCollection();
+  const user = /^[a-f\d]{24}$/i.test(tokenPayload.sub)
+    ? await collection.findOne({ _id: new ObjectId(tokenPayload.sub) })
+    : await collection.findOne({ email: tokenPayload.email });
+
+  if (!user) {
+    return null;
+  }
+
+  return sanitizeUser(user);
 }
 
 function sanitizeFilenamePart(value) {
@@ -634,37 +724,211 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-app.post("/api/auth/login", (req, res) => {
-  const settingsError = getAuthSettingsError();
+async function requireAuth(req, res, next) {
+  try {
+    const user = await getAuthenticatedUser(req);
 
-  if (settingsError) {
-    res.status(503).json({ error: `Admin auth sozlanmagan: ${settingsError}` });
+    if (!user) {
+      res.status(401).json({ error: "Avval profilingizga kiring." });
+      return;
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+app.post("/api/auth/register", requireMongo, async (req, res) => {
+  try {
+    const jwtSettingsError = getJwtSettingsError();
+
+    if (jwtSettingsError) {
+      res.status(503).json({ error: `Auth sozlanmagan: ${jwtSettingsError}` });
+      return;
+    }
+
+    const name = String(req.body.name || "").trim();
+    const email = String(req.body.email || "").trim().toLowerCase();
+    const password = String(req.body.password || "");
+
+    if (!name || !email || !password) {
+      res.status(400).json({ error: "Ism, email va parol majburiy." });
+      return;
+    }
+
+    if (password.length < 6) {
+      res.status(400).json({ error: "Parol kamida 6 ta belgidan iborat bo'lishi kerak." });
+      return;
+    }
+
+    const collection = await getUsersCollection();
+    const existing = await collection.findOne({ email });
+
+    if (existing || email === adminEmail) {
+      res.status(409).json({ error: "Bu email bilan profil mavjud." });
+      return;
+    }
+
+    const passwordRecord = createPasswordRecord(password);
+    const now = new Date();
+    const result = await collection.insertOne({
+      name,
+      email,
+      role: "user",
+      passwordHash: passwordRecord.hash,
+      passwordSalt: passwordRecord.salt,
+      passwordIterations: passwordRecord.iterations,
+      createdAt: now,
+      updatedAt: now,
+    });
+    const user = sanitizeUser(await collection.findOne({ _id: result.insertedId }));
+
+    res.status(201).json({
+      user,
+      token: createAuthToken(user),
+    });
+  } catch (error) {
+    res.status(error.code === 11000 ? 409 : 500).json({
+      error: error.code === 11000 ? "Bu email bilan profil mavjud." : error.message,
+    });
+  }
+});
+
+app.post("/api/auth/login", async (req, res) => {
+  const jwtSettingsError = getJwtSettingsError();
+
+  if (jwtSettingsError) {
+    res.status(503).json({ error: `Auth sozlanmagan: ${jwtSettingsError}` });
     return;
   }
 
   const email = String(req.body.email || "").trim().toLowerCase();
   const password = String(req.body.password || "");
 
-  if (email !== adminEmail || !timingSafeStringEqual(password, adminPassword)) {
+  if (email === adminEmail && adminPassword && timingSafeStringEqual(password, adminPassword)) {
+    res.json({
+      user: getAdminUser(),
+      token: createAdminToken(),
+    });
+    return;
+  }
+
+  if (!isMongoConfigured()) {
     res.status(401).json({ error: "Email yoki parol noto'g'ri." });
     return;
   }
 
-  res.json({
-    user: getAdminUser(),
-    token: createAdminToken(),
-  });
+  try {
+    const collection = await getUsersCollection();
+    const document = await collection.findOne({ email });
+
+    if (!document || !verifyPassword(password, document)) {
+      res.status(401).json({ error: "Email yoki parol noto'g'ri." });
+      return;
+    }
+
+    const user = sanitizeUser(document);
+
+    res.json({
+      user,
+      token: createAuthToken(user),
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-app.get("/api/auth/me", (req, res) => {
-  const tokenPayload = verifyAdminToken(getBearerToken(req));
+app.get("/api/auth/me", async (req, res) => {
+  const user = await getAuthenticatedUser(req).catch(() => null);
 
-  if (!tokenPayload) {
+  if (!user) {
     res.status(401).json({ error: "Session muddati tugagan." });
     return;
   }
 
-  res.json({ user: getAdminUser() });
+  res.json({ user });
+});
+
+app.patch("/api/auth/me", requireAuth, async (req, res) => {
+  try {
+    const name = String(req.body.name || "").trim();
+
+    if (!name) {
+      res.status(400).json({ error: "Ism bo'sh bo'lmasligi kerak." });
+      return;
+    }
+
+    if (req.user.role === "admin" && req.user.email === adminEmail) {
+      res.json({ user: { ...req.user, name } });
+      return;
+    }
+
+    const collection = await getUsersCollection();
+
+    await collection.updateOne(
+      { _id: new ObjectId(req.user.id) },
+      {
+        $set: {
+          name,
+          updatedAt: new Date(),
+        },
+      },
+    );
+
+    res.json({ user: sanitizeUser(await collection.findOne({ _id: new ObjectId(req.user.id) })) });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/auth/change-password", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role === "admin" && req.user.email === adminEmail) {
+      res.status(400).json({ error: "Admin paroli server sozlamalarida boshqariladi." });
+      return;
+    }
+
+    const currentPassword = String(req.body.currentPassword || "");
+    const newPassword = String(req.body.newPassword || "");
+
+    if (!currentPassword) {
+      res.status(400).json({ error: "Joriy parol majburiy." });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      res.status(400).json({ error: "Yangi parol kamida 6 ta belgidan iborat bo'lishi kerak." });
+      return;
+    }
+
+    const collection = await getUsersCollection();
+    const document = await collection.findOne({ _id: new ObjectId(req.user.id) });
+
+    if (!document || !verifyPassword(currentPassword, document)) {
+      res.status(400).json({ error: "Joriy parol noto'g'ri." });
+      return;
+    }
+
+    const passwordRecord = createPasswordRecord(newPassword);
+
+    await collection.updateOne(
+      { _id: document._id },
+      {
+        $set: {
+          passwordHash: passwordRecord.hash,
+          passwordSalt: passwordRecord.salt,
+          passwordIterations: passwordRecord.iterations,
+          updatedAt: new Date(),
+        },
+      },
+    );
+
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.get("/uploads/posters/:filename", requireMongo, async (req, res) => {
@@ -992,6 +1256,93 @@ app.delete("/api/series/:id/episodes/:episodeId", requireMongo, requireAdmin, as
     const document = await collection.findOne({ _id: existing._id });
 
     res.json(toClientSeries(document));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+function sanitizeDownloadUrl(value) {
+  const url = String(value || "").trim();
+
+  if (!url) {
+    return "";
+  }
+
+  if (url.startsWith("/")) {
+    return url;
+  }
+
+  try {
+    const parsed = new URL(url);
+    return ["http:", "https:"].includes(parsed.protocol) ? url : "";
+  } catch (error) {
+    return "";
+  }
+}
+
+function toClientDownloadHistory(document) {
+  if (!document) {
+    return null;
+  }
+
+  const { _id, userId, ...history } = document;
+
+  return {
+    id: _id.toString(),
+    ...history,
+    downloadedAt: history.downloadedAt || history.updatedAt || history.createdAt || "",
+  };
+}
+
+app.post("/api/download-history", requireMongo, requireAuth, async (req, res) => {
+  try {
+    const movieId = String(req.body.movieId || "").trim();
+    const title = String(req.body.title || "").trim();
+
+    if (!movieId || !title) {
+      res.status(400).json({ error: "Film ID va nomi majburiy." });
+      return;
+    }
+
+    const quality = String(req.body.quality || "1080p").trim() || "1080p";
+    const now = new Date();
+    const record = {
+      userId: req.user.id,
+      movieId,
+      title,
+      poster: String(req.body.poster || "").trim(),
+      quality,
+      size: String(req.body.size || "").trim(),
+      format: String(req.body.format || "MP4").trim() || "MP4",
+      downloadUrl: sanitizeDownloadUrl(req.body.downloadUrl),
+      downloadedAt: now,
+      updatedAt: now,
+    };
+    const collection = await getDownloadHistoryCollection();
+
+    await collection.updateOne(
+      { userId: req.user.id, movieId, quality },
+      {
+        $set: record,
+        $setOnInsert: { createdAt: now },
+      },
+      { upsert: true },
+    );
+
+    const saved = await collection.findOne({ userId: req.user.id, movieId, quality });
+
+    res.status(201).json(toClientDownloadHistory(saved));
+  } catch (error) {
+    res.status(error.code === 11000 ? 409 : 500).json({ error: error.message });
+  }
+});
+
+app.get("/api/download-history/me", requireMongo, requireAuth, async (req, res) => {
+  try {
+    const collection = await getDownloadHistoryCollection();
+    const history = await collection.find({ userId: req.user.id }).sort({ downloadedAt: -1 }).limit(100).toArray();
+
+    res.json(history.map(toClientDownloadHistory));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

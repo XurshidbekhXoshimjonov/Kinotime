@@ -139,15 +139,11 @@
             </button>
 
             <div class="profile-menu__dropdown" id="profile-dropdown" role="menu" hidden>
-                <button class="profile-menu__item" type="button" role="menuitem" data-profile-menu-close>
+                <button class="profile-menu__item" type="button" id="profile-page-link" role="menuitem">
                   <i class="ti ti-user-circle" aria-hidden="true"></i>
                   Profil
                 </button>
-                <button class="profile-menu__item" type="button" id="profile-admin-link" role="menuitem" hidden>
-                  <i class="ti ti-layout-dashboard" aria-hidden="true"></i>
-                  Admin Panel
-                </button>
-                <button class="profile-menu__item" type="button" role="menuitem" data-profile-menu-close>
+                <button class="profile-menu__item" type="button" id="settings-page-link" role="menuitem">
                   <i class="ti ti-settings" aria-hidden="true"></i>
                   Sozlamalar
                 </button>
@@ -224,6 +220,15 @@
             Filmlarga qaytish
           </button>
           <div id="detail-content"></div>
+        </section>
+
+        <!-- Account pages: simple profile and settings surfaces for logged-in users -->
+        <section class="account-page" id="profile-page" hidden aria-labelledby="profile-page-title">
+          <div id="profile-page-content"></div>
+        </section>
+
+        <section class="account-page" id="settings-page" hidden aria-labelledby="settings-page-title">
+          <div id="settings-page-content"></div>
         </section>
 
         <!-- Auth pages: premium login and sign up layout -->

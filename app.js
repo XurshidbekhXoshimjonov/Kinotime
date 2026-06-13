@@ -5,6 +5,7 @@ const PUBLIC_API_URL = normalizeBaseUrl(RUNTIME_CONFIG.apiUrl || `${PUBLIC_SITE_
 const CATALOG_API_URL = buildApiUrl("/movies");
 const SERIES_API_URL = buildApiUrl("/series");
 const AUTH_API_URL = buildApiUrl("/auth");
+const DOWNLOAD_HISTORY_API_URL = buildApiUrl("/download-history");
 const POSTER_PLACEHOLDER =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='780' viewBox='0 0 520 780'%3E%3Crect width='520' height='780' fill='%23121722'/%3E%3Crect x='34' y='34' width='452' height='712' rx='28' fill='none' stroke='%23283144' stroke-width='4'/%3E%3Ctext x='260' y='390' fill='%23aab2c2' font-family='Arial,sans-serif' font-size='34' text-anchor='middle'%3EPoster%3C/text%3E%3C/svg%3E";
 const CATALOG_ITEMS_PER_PAGE = 12;
@@ -537,8 +538,13 @@ const profileToggle = document.querySelector("#profile-toggle");
 const profileDropdown = document.querySelector("#profile-dropdown");
 const profileAvatar = document.querySelector("#profile-avatar");
 const profileName = document.querySelector("#profile-name");
-const profileAdminLink = document.querySelector("#profile-admin-link");
+const profilePageLink = document.querySelector("#profile-page-link");
+const settingsPageLink = document.querySelector("#settings-page-link");
 const logoutButton = document.querySelector("#logout-button");
+const profilePage = document.querySelector("#profile-page");
+const profilePageContent = document.querySelector("#profile-page-content");
+const settingsPage = document.querySelector("#settings-page");
+const settingsPageContent = document.querySelector("#settings-page-content");
 
 let activeSection = "filmlar";
 let searchTerm = "";
@@ -569,6 +575,7 @@ let pendingAuthRedirect = "";
 
 const USERS_STORAGE_KEY = "kinotime.users";
 const SESSION_STORAGE_KEY = "kinotime.session";
+const DOWNLOAD_HISTORY_STORAGE_KEY = "kinotime.downloadHistory";
 const PASSWORD_ITERATIONS = 120000;
 
 // Helpers: normalize text, build tags and render list values consistently.
@@ -1373,6 +1380,10 @@ function saveUsers(users) {
   localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
 }
 
+function getUserIdentity(user = currentUser) {
+  return user?.id || user?.email || "";
+}
+
 function getStoredSession() {
   try {
     const session = JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY));
@@ -1394,11 +1405,13 @@ function getStoredSession() {
 
 function createSession(user) {
   const session = {
+    id: user.id || user.mongoId || user.email,
     email: user.email,
     name: user.name,
     role: user.role || "user",
     token: user.token || "",
-    createdAt: new Date().toISOString(),
+    createdAt: user.createdAt || user.joinedAt || new Date().toISOString(),
+    sessionCreatedAt: new Date().toISOString(),
   };
 
   localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
@@ -1419,7 +1432,7 @@ async function restoreStoredSession() {
     return null;
   }
 
-  if (session.role !== "admin") {
+  if (!session.token) {
     return session;
   }
 
@@ -1436,7 +1449,8 @@ async function restoreStoredSession() {
   const verifiedSession = {
     ...payload.user,
     token: session.token,
-    createdAt: session.createdAt,
+    createdAt: payload.user.createdAt || session.createdAt,
+    sessionCreatedAt: session.sessionCreatedAt,
   };
 
   localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(verifiedSession));
@@ -1489,8 +1503,33 @@ async function hashPassword(password, saltBase64 = "") {
 }
 
 async function registerUser({ name, email, password }) {
-  const users = getUsers();
   const normalizedEmail = email.trim().toLowerCase();
+  const serverResponse = await fetch(`${AUTH_API_URL}/register`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ name: name.trim(), email: normalizedEmail, password: password.toString() }),
+  }).catch(() => null);
+
+  if (serverResponse?.ok) {
+    const payload = await serverResponse.json();
+    const user = {
+      ...payload.user,
+      token: payload.token,
+    };
+
+    createSession(user);
+    return user;
+  }
+
+  if (serverResponse && ![401, 503].includes(serverResponse.status)) {
+    const errorBody = await serverResponse.json().catch(() => ({}));
+    throw new Error(errorBody.error || "Profil yaratib bo'lmadi.");
+  }
+
+  const users = getUsers();
 
   if (users.some((user) => user.email === normalizedEmail)) {
     throw new Error("Bu email bilan profil mavjud.");
@@ -1561,6 +1600,254 @@ async function loginUser({ email, password }) {
 
   createSession(localUser);
   return localUser;
+}
+
+function updateCurrentSession(updates) {
+  if (!currentUser) {
+    return;
+  }
+
+  currentUser = {
+    ...currentUser,
+    ...updates,
+  };
+  localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(currentUser));
+  updateAuthUI();
+}
+
+function getLocalCurrentUser() {
+  const identity = getUserIdentity();
+
+  if (!identity) {
+    return null;
+  }
+
+  return getUsers().find((user) => user.id === identity || user.email === currentUser.email) || null;
+}
+
+async function updateUserDisplayName(name) {
+  const trimmedName = name.trim();
+
+  if (!trimmedName) {
+    throw new Error("Ism bo'sh bo'lmasligi kerak.");
+  }
+
+  if (currentUser?.token) {
+    const response = await fetch(`${AUTH_API_URL}/me`, {
+      method: "PATCH",
+      headers: getAuthHeaders({
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      }),
+      body: JSON.stringify({ name: trimmedName }),
+    });
+
+    if (response.ok) {
+      const payload = await response.json();
+      updateCurrentSession({
+        ...payload.user,
+        token: currentUser.token,
+        name: payload.user.name || trimmedName,
+      });
+      return currentUser;
+    }
+
+    if (currentUser.role !== "admin") {
+      const errorBody = await response.json().catch(() => ({}));
+      throw new Error(errorBody.error || "Ismni saqlab bo'lmadi.");
+    }
+  }
+
+  const users = getUsers();
+  const index = users.findIndex((user) => user.id === currentUser.id || user.email === currentUser.email);
+
+  if (index >= 0) {
+    users[index] = {
+      ...users[index],
+      name: trimmedName,
+      updatedAt: new Date().toISOString(),
+    };
+    saveUsers(users);
+  }
+
+  updateCurrentSession({ name: trimmedName });
+  return currentUser;
+}
+
+async function changeUserPassword({ currentPassword, newPassword, confirmPassword }) {
+  if (!currentPassword) {
+    throw new Error("Joriy parol majburiy.");
+  }
+
+  if (newPassword.length < 6) {
+    throw new Error("Yangi parol kamida 6 ta belgidan iborat bo'lishi kerak.");
+  }
+
+  if (newPassword !== confirmPassword) {
+    throw new Error("Yangi parol tasdiqlash bilan mos emas.");
+  }
+
+  if (currentUser?.token) {
+    const response = await fetch(`${AUTH_API_URL}/change-password`, {
+      method: "POST",
+      headers: getAuthHeaders({
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      }),
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+
+    if (response.ok) {
+      return;
+    }
+
+    const errorBody = await response.json().catch(() => ({}));
+    throw new Error(errorBody.error || "Parolni o'zgartirib bo'lmadi.");
+  }
+
+  const users = getUsers();
+  const index = users.findIndex((user) => user.id === currentUser.id || user.email === currentUser.email);
+  const user = index >= 0 ? users[index] : null;
+
+  if (!user) {
+    throw new Error("Profil topilmadi.");
+  }
+
+  const currentPasswordRecord = await hashPassword(currentPassword, user.passwordSalt);
+
+  if (currentPasswordRecord.hash !== user.passwordHash) {
+    throw new Error("Joriy parol noto'g'ri.");
+  }
+
+  const newPasswordRecord = await hashPassword(newPassword);
+  users[index] = {
+    ...user,
+    passwordHash: newPasswordRecord.hash,
+    passwordSalt: newPasswordRecord.salt,
+    passwordIterations: PASSWORD_ITERATIONS,
+    updatedAt: new Date().toISOString(),
+  };
+  saveUsers(users);
+}
+
+function getLocalDownloadHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(DOWNLOAD_HISTORY_STORAGE_KEY)) ?? [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveLocalDownloadHistory(history) {
+  localStorage.setItem(DOWNLOAD_HISTORY_STORAGE_KEY, JSON.stringify(history));
+}
+
+function upsertLocalDownloadHistory(record) {
+  const history = getLocalDownloadHistory();
+  const index = history.findIndex(
+    (item) => item.userId === record.userId && item.movieId === record.movieId && item.quality === record.quality,
+  );
+
+  if (index >= 0) {
+    history[index] = {
+      ...history[index],
+      ...record,
+      id: history[index].id,
+      updatedAt: record.downloadedAt,
+    };
+  } else {
+    history.unshift({
+      id: crypto.randomUUID(),
+      ...record,
+      createdAt: record.downloadedAt,
+    });
+  }
+
+  saveLocalDownloadHistory(history);
+}
+
+function getCurrentUserLocalDownloadHistory() {
+  const userId = getUserIdentity();
+
+  return getLocalDownloadHistory()
+    .filter((item) => item.userId === userId)
+    .sort((first, second) => new Date(second.downloadedAt) - new Date(first.downloadedAt));
+}
+
+async function fetchDownloadHistory() {
+  if (!currentUser) {
+    return [];
+  }
+
+  if (!currentUser.token) {
+    return getCurrentUserLocalDownloadHistory();
+  }
+
+  const response = await fetch(`${DOWNLOAD_HISTORY_API_URL}/me`, {
+    headers: getAuthHeaders({ Accept: "application/json" }),
+  }).catch(() => null);
+
+  if (!response?.ok) {
+    return getCurrentUserLocalDownloadHistory();
+  }
+
+  return response.json();
+}
+
+function normalizeHistoryRecord(record) {
+  return {
+    userId: getUserIdentity(),
+    movieId: record.movieId,
+    title: record.title,
+    poster: record.poster,
+    quality: record.quality || "1080p",
+    size: record.size || "",
+    format: record.format || "MP4",
+    downloadUrl: getSafeDownloadUrl(record.downloadUrl),
+    downloadedAt: new Date().toISOString(),
+  };
+}
+
+function getSafeDownloadUrl(value) {
+  const url = (value || "").toString().trim();
+
+  if (!url) {
+    return "";
+  }
+
+  if (url.startsWith("/")) {
+    return url;
+  }
+
+  try {
+    const parsed = new URL(url);
+    return ["http:", "https:"].includes(parsed.protocol) ? url : "";
+  } catch (error) {
+    return "";
+  }
+}
+
+function trackDownload(record) {
+  if (!currentUser) {
+    return;
+  }
+
+  const historyRecord = normalizeHistoryRecord(record);
+  upsertLocalDownloadHistory(historyRecord);
+
+  if (!currentUser.token) {
+    return;
+  }
+
+  fetch(DOWNLOAD_HISTORY_API_URL, {
+    method: "POST",
+    keepalive: true,
+    headers: getAuthHeaders({
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    }),
+    body: JSON.stringify(historyRecord),
+  }).catch(() => {});
 }
 
 function hasAdminAccess() {
@@ -1818,9 +2105,17 @@ function getSectionFromHash() {
     return "signup";
   }
 
+  if (window.location.hash === "#profile") {
+    return "profile";
+  }
+
+  if (window.location.hash === "#settings") {
+    return "settings";
+  }
+
   const routeName = window.location.pathname.replace(/\/+$/, "").split("/").pop();
 
-  if (["admin", "login", "signup", "seriallar", "filmlar"].includes(routeName)) {
+  if (["admin", "login", "signup", "seriallar", "filmlar", "profile", "settings"].includes(routeName)) {
     return routeName;
   }
 
@@ -2315,6 +2610,203 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function formatDisplayDate(value, fallback = "Noma'lum") {
+  if (!value) {
+    return fallback;
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return fallback;
+  }
+
+  return new Intl.DateTimeFormat("uz-UZ", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function getRoleLabel(role) {
+  return role === "admin" ? "Admin" : "User";
+}
+
+function getUserInitial(user = currentUser) {
+  return getUserLabel(user).charAt(0).toUpperCase() || "U";
+}
+
+function renderDownloadHistoryList(downloads = []) {
+  if (!downloads.length) {
+    return `
+      <div class="account-empty">
+        <i class="ti ti-download-off" aria-hidden="true"></i>
+        <p>Hali hech qanday film yuklab olinmagan.</p>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="download-history-grid">
+      ${downloads
+        .map(
+          (item) => `
+            <article class="download-history-card">
+              <img src="${escapeHtml(item.poster || POSTER_PLACEHOLDER)}" alt="${escapeHtml(item.title || "Film")} posteri" loading="lazy" />
+              <div class="download-history-card__body">
+                <h3>${escapeHtml(item.title || "Film")}</h3>
+                <div class="download-history-card__tags">
+                  <span>${escapeHtml(item.quality || "1080p")}</span>
+                  ${item.size ? `<span>${escapeHtml(item.size)}</span>` : ""}
+                  <span>${escapeHtml(item.format || "MP4")}</span>
+                </div>
+                <p>${escapeHtml(formatDisplayDate(item.downloadedAt))}</p>
+              </div>
+            </article>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+async function renderProfilePage() {
+  if (!profilePageContent || !currentUser) {
+    return;
+  }
+
+  const label = getUserLabel(currentUser);
+  profilePageContent.innerHTML = `
+    <div class="account-layout">
+      <section class="account-card account-card--hero">
+        <div class="account-avatar-large">${escapeHtml(getUserInitial(currentUser))}</div>
+        <div class="account-profile-main">
+          <p class="account-kicker">Profil</p>
+          <h1 id="profile-page-title">${escapeHtml(label)}</h1>
+          <p>${escapeHtml(currentUser.email || "Email kiritilmagan")}</p>
+        </div>
+        <div class="account-status">
+          <span class="account-status__dot"></span>
+          Online
+        </div>
+      </section>
+
+      <section class="account-card account-info-grid" aria-label="Profil ma'lumotlari">
+        <div>
+          <span>Rol</span>
+          <strong>${escapeHtml(getRoleLabel(currentUser.role))}</strong>
+        </div>
+        <div>
+          <span>Email</span>
+          <strong>${escapeHtml(currentUser.email || "Noma'lum")}</strong>
+        </div>
+        <div>
+          <span>Qo'shilgan sana</span>
+          <strong>${escapeHtml(formatDisplayDate(currentUser.createdAt, "Noma'lum"))}</strong>
+        </div>
+        <div>
+          <span>Holat</span>
+          <strong>Online</strong>
+        </div>
+      </section>
+
+      <section class="account-card">
+        <div class="account-section-heading">
+          <div>
+            <p class="account-kicker">Tarix</p>
+            <h2>Yuklab olingan filmlar</h2>
+          </div>
+        </div>
+        <div id="download-history-content">
+          <div class="account-empty">
+            <i class="ti ti-loader-2" aria-hidden="true"></i>
+            <p>Yuklab olishlar yuklanmoqda...</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  `;
+
+  const historyContent = profilePageContent.querySelector("#download-history-content");
+  const downloads = await fetchDownloadHistory();
+
+  if (historyContent) {
+    historyContent.innerHTML = renderDownloadHistoryList(downloads);
+  }
+}
+
+function renderSettingsPage() {
+  if (!settingsPageContent || !currentUser) {
+    return;
+  }
+
+  settingsPageContent.innerHTML = `
+    <div class="account-layout">
+      <section class="account-page-header">
+        <p class="account-kicker">Sozlamalar</p>
+        <h1 id="settings-page-title">Profil sozlamalari</h1>
+        <p>Ism va parolingizni xavfsiz yangilang.</p>
+      </section>
+
+      <div class="settings-grid">
+        <form class="account-card account-form" id="settings-name-form" novalidate>
+          <div class="account-section-heading">
+            <div>
+              <p class="account-kicker">Profil</p>
+              <h2>Ismni o'zgartirish</h2>
+            </div>
+          </div>
+          <p class="account-current-name">Hozirgi ism: <strong>${escapeHtml(getUserLabel(currentUser))}</strong></p>
+          <label class="auth-field">
+            <span class="auth-field__label">Ism</span>
+            <div class="auth-field__control">
+              <i class="ti ti-user auth-field__icon" aria-hidden="true"></i>
+              <input type="text" name="name" value="${escapeHtml(getUserLabel(currentUser))}" autocomplete="name" />
+            </div>
+            <p class="auth-field__error" data-settings-error="name"></p>
+          </label>
+          <button class="auth-page__submit" type="submit">Saqlash</button>
+          <p class="settings-feedback" data-settings-feedback="name" role="status"></p>
+        </form>
+
+        <form class="account-card account-form" id="settings-password-form" novalidate>
+          <div class="account-section-heading">
+            <div>
+              <p class="account-kicker">Xavfsizlik</p>
+              <h2>Parolni o'zgartirish</h2>
+            </div>
+          </div>
+          <label class="auth-field">
+            <span class="auth-field__label">Joriy parol</span>
+            <div class="auth-field__control">
+              <i class="ti ti-lock auth-field__icon" aria-hidden="true"></i>
+              <input type="password" name="currentPassword" autocomplete="current-password" />
+            </div>
+          </label>
+          <label class="auth-field">
+            <span class="auth-field__label">Yangi parol</span>
+            <div class="auth-field__control">
+              <i class="ti ti-lock-plus auth-field__icon" aria-hidden="true"></i>
+              <input type="password" name="newPassword" autocomplete="new-password" />
+            </div>
+          </label>
+          <label class="auth-field">
+            <span class="auth-field__label">Yangi parolni tasdiqlash</span>
+            <div class="auth-field__control">
+              <i class="ti ti-shield-check auth-field__icon" aria-hidden="true"></i>
+              <input type="password" name="confirmPassword" autocomplete="new-password" />
+            </div>
+          </label>
+          <button class="auth-page__submit" type="submit">Saqlash</button>
+          <p class="settings-feedback" data-settings-feedback="password" role="status"></p>
+        </form>
+      </div>
+    </div>
+  `;
 }
 
 function renderAdminMovieList(errorMessage = "") {
@@ -3058,6 +3550,18 @@ function showCatalogShell() {
   detailPage.hidden = true;
   adminPanel.hidden = true;
   authPage.hidden = true;
+  profilePage.hidden = true;
+  settingsPage.hidden = true;
+}
+
+function hideCatalogAndAccountPages() {
+  catalogHeader.hidden = true;
+  catalogSection.hidden = true;
+  detailPage.hidden = true;
+  adminPanel.hidden = true;
+  authPage.hidden = true;
+  profilePage.hidden = true;
+  settingsPage.hidden = true;
 }
 
 function clearAuthFieldErrors(form) {
@@ -3176,10 +3680,7 @@ function renderAuthPage(mode) {
   const isSignup = mode === "signup";
 
   document.body.classList.add("is-auth-page");
-  catalogHeader.hidden = true;
-  catalogSection.hidden = true;
-  detailPage.hidden = true;
-  adminPanel.hidden = true;
+  hideCatalogAndAccountPages();
   authPage.hidden = false;
   authPageTitle.textContent = isSignup ? "Create account" : "Welcome back";
   authPageSubtitle.textContent = isSignup
@@ -3221,10 +3722,7 @@ function setSection(section, shouldResetSearch = false) {
     }
 
     document.body.classList.remove("is-auth-page");
-    catalogHeader.hidden = true;
-    catalogSection.hidden = true;
-    detailPage.hidden = true;
-    authPage.hidden = true;
+    hideCatalogAndAccountPages();
     adminPanel.hidden = false;
     adminGuard.hidden = hasAdminAccess();
     adminWorkspace.hidden = !hasAdminAccess();
@@ -3236,6 +3734,31 @@ function setSection(section, shouldResetSearch = false) {
       renderEpisodePanel();
       loadCatalogFromApi();
     }
+    return;
+  }
+
+  if (section === "profile" || section === "settings") {
+    if (!currentUser) {
+      pendingAuthRedirect = `#${section}`;
+      history.replaceState(null, "", "#login");
+      renderAuthPage("login");
+      closeMobileMenu();
+      return;
+    }
+
+    document.body.classList.remove("is-auth-page");
+    setActiveNav("");
+    hideCatalogAndAccountPages();
+
+    if (section === "profile") {
+      profilePage.hidden = false;
+      renderProfilePage();
+    } else {
+      settingsPage.hidden = false;
+      renderSettingsPage();
+    }
+
+    closeMobileMenu();
     return;
   }
 
@@ -3307,7 +3830,7 @@ function openDetailPage(itemId) {
                       <span class="download-row__label">S${episode.seasonNumber} E${episode.episodeNumber}: ${escapeHtml(episode.title)}</span>
                       <span class="download-badge">${escapeHtml(episode.description || "Episode")}</span>
                     </div>
-                    <a class="download-row__button" href="${escapeHtml(episode.downloadLink || episode.videoUrl)}" download aria-label="${escapeHtml(episode.title)} yuklab olish">
+                    <a class="download-row__button" href="${escapeHtml(episode.downloadLink || episode.videoUrl)}" download aria-label="${escapeHtml(episode.title)} yuklab olish" data-download-track data-download-movie-id="${escapeHtml(`${item.id}-${episode.id}`)}" data-download-title="${escapeHtml(`${item.titleUz} - S${episode.seasonNumber} E${episode.episodeNumber}: ${episode.title}`)}" data-download-poster="${escapeHtml(item.posterUrl)}" data-download-quality="${escapeHtml(episode.quality || item.quality || "1080p")}" data-download-size="${escapeHtml(episode.fileSize || "")}" data-download-format="${escapeHtml(episode.format || item.format || "MP4")}">
                       <i class="ti ti-download" aria-hidden="true"></i>
                     </a>
                   </div>
@@ -3326,7 +3849,7 @@ function openDetailPage(itemId) {
               <span class="download-badge">${escapeHtml(download.size || item.download1080pSize || "")}</span>
               <span class="download-badge download-badge--format">${escapeHtml(download.format || item.format || "MP4")}</span>
             </div>
-            <a class="download-row__button" href="${escapeHtml(download.url || item.download1080pUrl || "#")}" download aria-label="Download 1080p">
+            <a class="download-row__button" href="${escapeHtml(download.url || item.download1080pUrl || "#")}" download aria-label="Download 1080p" data-download-track data-download-movie-id="${escapeHtml(item.id)}" data-download-title="${escapeHtml(item.titleUz)}" data-download-poster="${escapeHtml(item.posterUrl)}" data-download-quality="1080p" data-download-size="${escapeHtml(download.size || item.download1080pSize || "")}" data-download-format="${escapeHtml(download.format || item.format || "MP4")}">
               <i class="ti ti-download" aria-hidden="true"></i>
             </a>
           </div>
@@ -3336,10 +3859,7 @@ function openDetailPage(itemId) {
   activeDetailSection = item.section;
   setActiveNav(item.section);
   document.body.classList.remove("is-auth-page");
-  catalogHeader.hidden = true;
-  catalogSection.hidden = true;
-  adminPanel.hidden = true;
-  authPage.hidden = true;
+  hideCatalogAndAccountPages();
   detailPage.hidden = false;
   detailPage.style.setProperty("--detail-backdrop", `url(${JSON.stringify(item.posterUrl)})`);
 
@@ -3454,7 +3974,6 @@ function updateAuthUI() {
   const label = getUserLabel(currentUser);
   renderProfileAvatar(currentUser, label);
   profileName.textContent = label;
-  profileAdminLink.hidden = currentUser.role !== "admin";
 }
 
 hydrateSharedGenreSelects();
@@ -3555,6 +4074,21 @@ kinoGrid.addEventListener("click", (event) => {
 });
 
 detailContent.addEventListener("click", (event) => {
+  const downloadLink = event.target.closest("[data-download-track]");
+
+  if (downloadLink) {
+    trackDownload({
+      movieId: downloadLink.dataset.downloadMovieId,
+      title: downloadLink.dataset.downloadTitle,
+      poster: downloadLink.dataset.downloadPoster,
+      quality: downloadLink.dataset.downloadQuality,
+      size: downloadLink.dataset.downloadSize,
+      format: downloadLink.dataset.downloadFormat,
+      downloadUrl: downloadLink.getAttribute("href") || "",
+    });
+    return;
+  }
+
   const sectionLink = event.target.closest("[data-detail-section-link]");
 
   if (!sectionLink) {
@@ -3612,10 +4146,83 @@ profileDropdown.addEventListener("click", (event) => {
   }
 });
 
-profileAdminLink.addEventListener("click", () => {
+profilePageLink?.addEventListener("click", () => {
   closeProfileDropdown();
-  history.pushState(null, "", "#admin");
-  setSection("admin", true);
+  history.pushState(null, "", "#profile");
+  setSection("profile", true);
+});
+
+settingsPageLink?.addEventListener("click", () => {
+  closeProfileDropdown();
+  history.pushState(null, "", "#settings");
+  setSection("settings", true);
+});
+
+settingsPage?.addEventListener("submit", async (event) => {
+  const nameForm = event.target.closest("#settings-name-form");
+  const passwordForm = event.target.closest("#settings-password-form");
+
+  if (!nameForm && !passwordForm) {
+    return;
+  }
+
+  event.preventDefault();
+
+  if (nameForm) {
+    const feedback = nameForm.querySelector('[data-settings-feedback="name"]');
+    const error = nameForm.querySelector('[data-settings-error="name"]');
+    const input = nameForm.elements.namedItem("name");
+    const name = input.value.trim();
+
+    if (error) {
+      error.textContent = "";
+    }
+
+    if (!name) {
+      if (error) {
+        error.textContent = "Ism bo'sh bo'lmasligi kerak.";
+      }
+      return;
+    }
+
+    try {
+      await updateUserDisplayName(name);
+      renderSettingsPage();
+      if (settingsPageContent) {
+        const updatedFeedback = settingsPageContent.querySelector('[data-settings-feedback="name"]');
+        if (updatedFeedback) {
+          updatedFeedback.textContent = "Ism saqlandi.";
+          updatedFeedback.className = "settings-feedback settings-feedback--success";
+        }
+      }
+    } catch (errorMessage) {
+      if (feedback) {
+        feedback.textContent = errorMessage.message;
+        feedback.className = "settings-feedback settings-feedback--error";
+      }
+    }
+    return;
+  }
+
+  const feedback = passwordForm.querySelector('[data-settings-feedback="password"]');
+  const formData = new FormData(passwordForm);
+  const currentPassword = formData.get("currentPassword").toString();
+  const newPassword = formData.get("newPassword").toString();
+  const confirmPassword = formData.get("confirmPassword").toString();
+
+  try {
+    await changeUserPassword({ currentPassword, newPassword, confirmPassword });
+    passwordForm.reset();
+    if (feedback) {
+      feedback.textContent = "Parol yangilandi.";
+      feedback.className = "settings-feedback settings-feedback--success";
+    }
+  } catch (errorMessage) {
+    if (feedback) {
+      feedback.textContent = errorMessage.message;
+      feedback.className = "settings-feedback settings-feedback--error";
+    }
+  }
 });
 
 adminTabButtons.forEach((button) => {
@@ -3832,10 +4439,11 @@ loginForm.addEventListener("submit", async (event) => {
       email: formData.get("email"),
       password: formData.get("password"),
     });
-    const redirect = pendingAuthRedirect && hasAdminAccess() ? pendingAuthRedirect : "#home";
+    const redirect =
+      pendingAuthRedirect && (pendingAuthRedirect !== "#admin" || hasAdminAccess()) ? pendingAuthRedirect : "#home";
     pendingAuthRedirect = "";
     history.pushState(null, "", redirect);
-    setSection(redirect === "#admin" ? "admin" : "filmlar", true);
+    setSection(redirect.replace("#", "") || "filmlar", true);
   } catch (error) {
     setAuthFeedback(error.message, "error");
   }
@@ -3857,10 +4465,11 @@ signupForm.addEventListener("submit", async (event) => {
       email: formData.get("email"),
       password: formData.get("password").toString(),
     });
-    const redirect = pendingAuthRedirect && hasAdminAccess() ? pendingAuthRedirect : "#home";
+    const redirect =
+      pendingAuthRedirect && (pendingAuthRedirect !== "#admin" || hasAdminAccess()) ? pendingAuthRedirect : "#home";
     pendingAuthRedirect = "";
     history.pushState(null, "", redirect);
-    setSection(redirect === "#admin" ? "admin" : "filmlar", true);
+    setSection(redirect.replace("#", "") || "filmlar", true);
   } catch (error) {
     setAuthFeedback(error.message, "error");
   }
