@@ -63,7 +63,7 @@
         font-family="Inter, Arial, Helvetica, sans-serif"
         font-size="30"
         font-weight="850"
-        letter-spacing="-1.2">
+        letter-spacing="0">
     <tspan fill="#FFFFFF">kino</tspan><tspan fill="url(#ktText)">time</tspan><tspan fill="#FFFFFF" font-size="23" dx="2">.net</tspan>
   </text>
 </svg>
@@ -82,75 +82,17 @@
 
           <nav class="site-nav" aria-label="Asosiy menyu">
             <a class="site-nav__link site-nav__link--active" href="#filmlar" data-section-link="filmlar">
-              Filmlar
+              <i class="ti ti-movie" aria-hidden="true"></i>
+              <span>Filmlar</span>
             </a>
             <a class="site-nav__link" href="#seriallar" data-section-link="seriallar">
-              Seriallar
+              <i class="ti ti-device-tv" aria-hidden="true"></i>
+              <span>Seriallar</span>
             </a>
           </nav>
 
-          <div class="auth-actions">
-            <button class="button auth-button auth-button--login" type="button" data-auth-link="login">
-              <svg class="auth-button__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M9 8V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7a2 2 0 0 1-2-2v-3" />
-                <path d="M3 12h13" />
-                <path d="m13 9 3 3-3 3" />
-              </svg>
-              Login
-            </button>
-            <button class="button auth-button auth-button--signup" type="button" data-auth-link="signup">
-              <svg class="auth-button__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M8 7a4 4 0 1 0 8 0 4 4 0 0 0-8 0" />
-                <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
-              </svg>
-              Sign Up
-            </button>
-          </div>
-
-          <div class="profile-menu" id="profile-menu" hidden>
-            <button
-              class="profile-menu__button"
-              type="button"
-              id="profile-toggle"
-              aria-controls="profile-dropdown"
-              aria-expanded="false"
-              aria-haspopup="menu"
-            >
-              <span class="profile-menu__avatar" id="profile-avatar">U</span>
-              <span class="profile-menu__name" id="profile-name">User</span>
-              <span class="profile-menu__arrow" aria-hidden="true">⌄</span>
-            </button>
-
-            <div class="profile-menu__dropdown" id="profile-dropdown" role="menu" hidden>
-              <button class="profile-menu__item" type="button" id="profile-admin-link" role="menuitem" hidden>
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path d="M4 4h7v7H4z" />
-                  <path d="M13 4h7v7h-7z" />
-                  <path d="M4 13h7v7H4z" />
-                  <path d="M13 13h7v7h-7z" />
-                </svg>
-                Admin Panel
-              </button>
-              <button class="profile-menu__item profile-menu__item--danger" type="button" id="logout-button" role="menuitem">
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path d="M10 17v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v2" />
-                  <path d="M15 12H7" />
-                  <path d="m12 9 3 3-3 3" />
-                </svg>
-                Log Out
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main class="page-shell main-content" id="home">
-        <!-- Page controls: title and live search -->
-        <section class="catalog-header" aria-labelledby="catalog-title">
-          <div class="catalog-header__top">
-            <h1 id="catalog-title">Filmlar</h1>
-
-            <label class="search-box" for="search-input">
+          <div class="site-header__tools">
+            <label class="search-box site-search" for="search-input">
               <svg
                 class="search-box__icon"
                 viewBox="0 0 24 24"
@@ -163,12 +105,117 @@
               </svg>
               <input id="search-input" type="search" placeholder="Kino qidirish..." />
             </label>
+
+            <div class="auth-actions">
+              <button class="button auth-button auth-button--login" type="button" data-auth-link="login">
+                <svg class="auth-button__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M9 8V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7a2 2 0 0 1-2-2v-3" />
+                  <path d="M3 12h13" />
+                  <path d="m13 9 3 3-3 3" />
+                </svg>
+                Login
+              </button>
+              <button class="button auth-button auth-button--signup" type="button" data-auth-link="signup">
+                <svg class="auth-button__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M8 7a4 4 0 1 0 8 0 4 4 0 0 0-8 0" />
+                  <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
+                </svg>
+                Sign Up
+              </button>
+            </div>
+
+            <div class="profile-menu" id="profile-menu" hidden>
+              <button
+                class="profile-menu__button"
+                type="button"
+                id="profile-toggle"
+                aria-controls="profile-dropdown"
+                aria-expanded="false"
+              aria-haspopup="menu"
+            >
+              <span class="profile-menu__avatar" id="profile-avatar">U</span>
+              <span class="profile-menu__name" id="profile-name">User</span>
+              <i class="ti ti-chevron-down profile-menu__arrow" aria-hidden="true"></i>
+            </button>
+
+            <div class="profile-menu__dropdown" id="profile-dropdown" role="menu" hidden>
+                <button class="profile-menu__item" type="button" role="menuitem" data-profile-menu-close>
+                  <i class="ti ti-user-circle" aria-hidden="true"></i>
+                  Profil
+                </button>
+                <button class="profile-menu__item" type="button" id="profile-admin-link" role="menuitem" hidden>
+                  <i class="ti ti-layout-dashboard" aria-hidden="true"></i>
+                  Admin Panel
+                </button>
+                <button class="profile-menu__item" type="button" role="menuitem" data-profile-menu-close>
+                  <i class="ti ti-settings" aria-hidden="true"></i>
+                  Sozlamalar
+                </button>
+                <span class="profile-menu__divider" aria-hidden="true"></span>
+                <button class="profile-menu__item profile-menu__item--danger" type="button" id="logout-button" role="menuitem">
+                  <i class="ti ti-logout" aria-hidden="true"></i>
+                  Chiqish
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="page-shell main-content" id="home">
+        <!-- Page controls: title, subtitle and filter placeholders -->
+        <section class="catalog-header" aria-labelledby="catalog-title">
+          <div class="catalog-header__top">
+            <div class="catalog-header__copy">
+              <h1 id="catalog-title">Filmlar</h1>
+              <p id="catalog-subtitle">Yangi va mashhur filmlarni tomosha qiling</p>
+            </div>
+
+            <div class="catalog-filters" aria-label="Katalog filtrlari">
+              <button class="filter-chip filter-chip--active" type="button" data-filter-reset aria-pressed="true">
+                <i class="ti ti-layout-grid" aria-hidden="true"></i>
+                Barchasi
+              </button>
+              <div class="filter-dropdown" data-filter-dropdown="genre">
+                <button class="filter-chip" type="button" data-filter-toggle="genre" aria-expanded="false">
+                  <span data-filter-label="genre">Janr</span>
+                  <i class="ti ti-chevron-down" aria-hidden="true"></i>
+                </button>
+                <div class="filter-menu" data-filter-options="genre" hidden></div>
+              </div>
+              <div class="filter-dropdown" data-filter-dropdown="country">
+                <button class="filter-chip" type="button" data-filter-toggle="country" aria-expanded="false">
+                  <span data-filter-label="country">Mamlakat</span>
+                  <i class="ti ti-chevron-down" aria-hidden="true"></i>
+                </button>
+                <div class="filter-menu" data-filter-options="country" hidden></div>
+              </div>
+              <div class="filter-dropdown" data-filter-dropdown="year">
+                <button class="filter-chip" type="button" data-filter-toggle="year" aria-expanded="false">
+                  <span data-filter-label="year">Yil</span>
+                  <i class="ti ti-chevron-down" aria-hidden="true"></i>
+                </button>
+                <div class="filter-menu" data-filter-options="year" hidden></div>
+              </div>
+              <div class="filter-dropdown filter-dropdown--wide" data-filter-dropdown="sort">
+                <button class="filter-chip filter-chip--wide" type="button" data-filter-toggle="sort" aria-expanded="false">
+                  <i class="ti ti-arrows-sort" aria-hidden="true"></i>
+                  <span data-filter-label="sort">Yangi qo'shilganlar</span>
+                  <i class="ti ti-chevron-down" aria-hidden="true"></i>
+                </button>
+                <div class="filter-menu" data-filter-options="sort" hidden></div>
+              </div>
+            </div>
           </div>
         </section>
 
         <!-- Catalog grid: movie and serial cards are rendered from app.js -->
         <section class="catalog-section" id="catalog-section" aria-label="Filmlar ro'yxati">
           <div class="kino-grid" id="kino-grid"></div>
+          <div class="catalog-footer" id="catalog-footer" hidden>
+            <p class="catalog-stats" id="catalog-stats"></p>
+            <nav class="catalog-pagination" id="catalog-pagination" aria-label="Katalog sahifalari"></nav>
+          </div>
         </section>
 
         <!-- Movie detail page: rendered from app.js when a card is opened -->
@@ -226,7 +273,7 @@
                     font-family="Inter, Arial, Helvetica, sans-serif"
                     font-size="30"
                     font-weight="850"
-                    letter-spacing="-1.2">
+                    letter-spacing="0">
                 <tspan fill="#FFFFFF">kino</tspan><tspan fill="url(#authKtText)">time</tspan><tspan fill="#FFFFFF" font-size="23" dx="2">.net</tspan>
               </text>
             </svg>

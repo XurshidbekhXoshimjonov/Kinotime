@@ -7,6 +7,405 @@ const SERIES_API_URL = buildApiUrl("/series");
 const AUTH_API_URL = buildApiUrl("/auth");
 const POSTER_PLACEHOLDER =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='780' viewBox='0 0 520 780'%3E%3Crect width='520' height='780' fill='%23121722'/%3E%3Crect x='34' y='34' width='452' height='712' rx='28' fill='none' stroke='%23283144' stroke-width='4'/%3E%3Ctext x='260' y='390' fill='%23aab2c2' font-family='Arial,sans-serif' font-size='34' text-anchor='middle'%3EPoster%3C/text%3E%3C/svg%3E";
+const CATALOG_ITEMS_PER_PAGE = 12;
+const CATALOG_SORT_OPTIONS = [
+  { value: "newest", label: "Yangi qo'shilganlar" },
+  { value: "oldest", label: "Eskilar" },
+];
+const WORLD_COUNTRIES = [
+  { label: "Afghanistan" },
+  { label: "Albania" },
+  { label: "Algeria" },
+  { label: "Andorra" },
+  { label: "Angola" },
+  { label: "Antigua and Barbuda" },
+  { label: "Argentina" },
+  { label: "Armenia" },
+  { label: "Australia" },
+  { label: "Austria" },
+  { label: "Azerbaijan", aliases: ["Ozarbayjon"] },
+  { label: "Bahamas" },
+  { label: "Bahrain" },
+  { label: "Bangladesh" },
+  { label: "Barbados" },
+  { label: "Belarus" },
+  { label: "Belgium" },
+  { label: "Belize" },
+  { label: "Benin" },
+  { label: "Bhutan" },
+  { label: "Bolivia" },
+  { label: "Bosnia and Herzegovina" },
+  { label: "Botswana" },
+  { label: "Brazil" },
+  { label: "Brunei" },
+  { label: "Bulgaria" },
+  { label: "Burkina Faso" },
+  { label: "Burundi" },
+  { label: "Cabo Verde" },
+  { label: "Cambodia" },
+  { label: "Cameroon" },
+  { label: "Canada" },
+  { label: "Central African Republic" },
+  { label: "Chad" },
+  { label: "Chile" },
+  { label: "China", aliases: ["Xitoy"] },
+  { label: "Colombia" },
+  { label: "Comoros" },
+  { label: "Congo" },
+  { label: "Costa Rica" },
+  { label: "Cote d'Ivoire" },
+  { label: "Croatia" },
+  { label: "Cuba" },
+  { label: "Cyprus" },
+  { label: "Czechia" },
+  { label: "Democratic Republic of the Congo" },
+  { label: "Denmark" },
+  { label: "Djibouti" },
+  { label: "Dominica" },
+  { label: "Dominican Republic" },
+  { label: "Ecuador" },
+  { label: "Egypt" },
+  { label: "El Salvador" },
+  { label: "Equatorial Guinea" },
+  { label: "Eritrea" },
+  { label: "Estonia" },
+  { label: "Eswatini" },
+  { label: "Ethiopia" },
+  { label: "Fiji" },
+  { label: "Finland" },
+  { label: "France" },
+  { label: "Gabon" },
+  { label: "Gambia" },
+  { label: "Georgia", aliases: ["Gruziya"] },
+  { label: "Germany" },
+  { label: "Ghana" },
+  { label: "Greece" },
+  { label: "Grenada" },
+  { label: "Guatemala" },
+  { label: "Guinea" },
+  { label: "Guinea-Bissau" },
+  { label: "Guyana" },
+  { label: "Haiti" },
+  { label: "Honduras" },
+  { label: "Hungary" },
+  { label: "Iceland" },
+  { label: "India", aliases: ["Hindiston"] },
+  { label: "Indonesia" },
+  { label: "Iran" },
+  { label: "Iraq" },
+  { label: "Ireland" },
+  { label: "Israel" },
+  { label: "Italy" },
+  { label: "Jamaica" },
+  { label: "Japan", aliases: ["Yaponiya"] },
+  { label: "Jordan" },
+  { label: "Kazakhstan", aliases: ["Qozog'iston", "Qozogiston"] },
+  { label: "Kenya" },
+  { label: "Kiribati" },
+  { label: "Kuwait" },
+  { label: "Kyrgyzstan", aliases: ["Qirg'iziston", "Qirgiziston"] },
+  { label: "Laos" },
+  { label: "Latvia" },
+  { label: "Lebanon" },
+  { label: "Lesotho" },
+  { label: "Liberia" },
+  { label: "Libya" },
+  { label: "Liechtenstein" },
+  { label: "Lithuania" },
+  { label: "Luxembourg" },
+  { label: "Madagascar" },
+  { label: "Malawi" },
+  { label: "Malaysia" },
+  { label: "Maldives" },
+  { label: "Mali" },
+  { label: "Malta" },
+  { label: "Marshall Islands" },
+  { label: "Mauritania" },
+  { label: "Mauritius" },
+  { label: "Mexico" },
+  { label: "Micronesia" },
+  { label: "Moldova" },
+  { label: "Monaco" },
+  { label: "Mongolia" },
+  { label: "Montenegro" },
+  { label: "Morocco" },
+  { label: "Mozambique" },
+  { label: "Myanmar" },
+  { label: "Namibia" },
+  { label: "Nauru" },
+  { label: "Nepal" },
+  { label: "Netherlands" },
+  { label: "New Zealand" },
+  { label: "Nicaragua" },
+  { label: "Niger" },
+  { label: "Nigeria" },
+  { label: "North Korea" },
+  { label: "North Macedonia" },
+  { label: "Norway" },
+  { label: "Oman" },
+  { label: "Pakistan" },
+  { label: "Palau" },
+  { label: "Palestine" },
+  { label: "Panama" },
+  { label: "Papua New Guinea" },
+  { label: "Paraguay" },
+  { label: "Peru" },
+  { label: "Philippines" },
+  { label: "Poland" },
+  { label: "Portugal" },
+  { label: "Qatar" },
+  { label: "Romania" },
+  { label: "Russia", aliases: ["Rossiya", "Russian Federation"] },
+  { label: "Rwanda" },
+  { label: "Saint Kitts and Nevis" },
+  { label: "Saint Lucia" },
+  { label: "Saint Vincent and the Grenadines" },
+  { label: "Samoa" },
+  { label: "San Marino" },
+  { label: "Sao Tome and Principe" },
+  { label: "Saudi Arabia" },
+  { label: "Senegal" },
+  { label: "Serbia" },
+  { label: "Seychelles" },
+  { label: "Sierra Leone" },
+  { label: "Singapore" },
+  { label: "Slovakia" },
+  { label: "Slovenia" },
+  { label: "Solomon Islands" },
+  { label: "Somalia" },
+  { label: "South Africa" },
+  { label: "South Korea", aliases: ["Korea", "Koreya", "Janubiy Koreya"] },
+  { label: "South Sudan" },
+  { label: "Spain" },
+  { label: "Sri Lanka" },
+  { label: "Sudan" },
+  { label: "Suriname" },
+  { label: "Sweden" },
+  { label: "Switzerland" },
+  { label: "Syria" },
+  { label: "Tajikistan", aliases: ["Tojikiston"] },
+  { label: "Tanzania" },
+  { label: "Thailand" },
+  { label: "Timor-Leste" },
+  { label: "Togo" },
+  { label: "Tonga" },
+  { label: "Trinidad and Tobago" },
+  { label: "Tunisia" },
+  { label: "Turkey", aliases: ["Turkiya"] },
+  { label: "Turkmenistan" },
+  { label: "Tuvalu" },
+  { label: "Uganda" },
+  { label: "Ukraine" },
+  { label: "United Arab Emirates", aliases: ["UAE", "BAA"] },
+  { label: "United Kingdom", aliases: ["UK", "Great Britain", "Britain", "Buyuk Britaniya", "Angliya"] },
+  { label: "USA", aliases: ["United States", "United States of America", "AQSh", "Amerika"] },
+  { label: "Uruguay" },
+  { label: "Uzbekistan", aliases: ["O'zbekiston", "O‘zbekiston"] },
+  { label: "Vanuatu" },
+  { label: "Vatican City" },
+  { label: "Venezuela" },
+  { label: "Vietnam" },
+  { label: "Yemen" },
+  { label: "Zambia" },
+  { label: "Zimbabwe" },
+];
+const UZBEK_COUNTRY_LABELS = {
+  Afghanistan: "Afg'oniston",
+  Albania: "Albaniya",
+  Algeria: "Jazoir",
+  Andorra: "Andorra",
+  Angola: "Angola",
+  "Antigua and Barbuda": "Antigua va Barbuda",
+  Argentina: "Argentina",
+  Armenia: "Armaniston",
+  Australia: "Avstraliya",
+  Austria: "Avstriya",
+  Azerbaijan: "Ozarbayjon",
+  Bahamas: "Bagama orollari",
+  Bahrain: "Bahrayn",
+  Bangladesh: "Bangladesh",
+  Barbados: "Barbados",
+  Belarus: "Belarus",
+  Belgium: "Belgiya",
+  Belize: "Beliz",
+  Benin: "Benin",
+  Bhutan: "Butan",
+  Bolivia: "Boliviya",
+  "Bosnia and Herzegovina": "Bosniya va Gersegovina",
+  Botswana: "Botsvana",
+  Brazil: "Braziliya",
+  Brunei: "Bruney",
+  Bulgaria: "Bolgariya",
+  "Burkina Faso": "Burkina-Faso",
+  Burundi: "Burundi",
+  "Cabo Verde": "Kabo-Verde",
+  Cambodia: "Kambodja",
+  Cameroon: "Kamerun",
+  Canada: "Kanada",
+  "Central African Republic": "Markaziy Afrika Respublikasi",
+  Chad: "Chad",
+  Chile: "Chili",
+  China: "Xitoy",
+  Colombia: "Kolumbiya",
+  Comoros: "Komor orollari",
+  Congo: "Kongo",
+  "Costa Rica": "Kosta-Rika",
+  "Cote d'Ivoire": "Kot-d'Ivuar",
+  Croatia: "Xorvatiya",
+  Cuba: "Kuba",
+  Cyprus: "Kipr",
+  Czechia: "Chexiya",
+  "Democratic Republic of the Congo": "Kongo Demokratik Respublikasi",
+  Denmark: "Daniya",
+  Djibouti: "Jibuti",
+  Dominica: "Dominika",
+  "Dominican Republic": "Dominikan Respublikasi",
+  Ecuador: "Ekvador",
+  Egypt: "Misr",
+  "El Salvador": "Salvador",
+  "Equatorial Guinea": "Ekvatorial Gvineya",
+  Eritrea: "Eritreya",
+  Estonia: "Estoniya",
+  Eswatini: "Esvatini",
+  Ethiopia: "Efiopiya",
+  Fiji: "Fiji",
+  Finland: "Finlyandiya",
+  France: "Fransiya",
+  Gabon: "Gabon",
+  Gambia: "Gambiya",
+  Georgia: "Gruziya",
+  Germany: "Germaniya",
+  Ghana: "Gana",
+  Greece: "Gretsiya",
+  Grenada: "Grenada",
+  Guatemala: "Gvatemala",
+  Guinea: "Gvineya",
+  "Guinea-Bissau": "Gvineya-Bisau",
+  Guyana: "Gayana",
+  Haiti: "Gaiti",
+  Honduras: "Gonduras",
+  Hungary: "Vengriya",
+  Iceland: "Islandiya",
+  India: "Hindiston",
+  Indonesia: "Indoneziya",
+  Iran: "Eron",
+  Iraq: "Iroq",
+  Ireland: "Irlandiya",
+  Israel: "Isroil",
+  Italy: "Italiya",
+  Jamaica: "Yamayka",
+  Japan: "Yaponiya",
+  Jordan: "Iordaniya",
+  Kazakhstan: "Qozog'iston",
+  Kenya: "Keniya",
+  Kiribati: "Kiribati",
+  Kuwait: "Quvayt",
+  Kyrgyzstan: "Qirg'iziston",
+  Laos: "Laos",
+  Latvia: "Latviya",
+  Lebanon: "Livan",
+  Lesotho: "Lesoto",
+  Liberia: "Liberiya",
+  Libya: "Liviya",
+  Liechtenstein: "Lixtenshteyn",
+  Lithuania: "Litva",
+  Luxembourg: "Lyuksemburg",
+  Madagascar: "Madagaskar",
+  Malawi: "Malavi",
+  Malaysia: "Malayziya",
+  Maldives: "Maldiv orollari",
+  Mali: "Mali",
+  Malta: "Malta",
+  "Marshall Islands": "Marshall orollari",
+  Mauritania: "Mavritaniya",
+  Mauritius: "Mavrikiy",
+  Mexico: "Meksika",
+  Micronesia: "Mikroneziya",
+  Moldova: "Moldova",
+  Monaco: "Monako",
+  Mongolia: "Mo'g'uliston",
+  Montenegro: "Chernogoriya",
+  Morocco: "Marokash",
+  Mozambique: "Mozambik",
+  Myanmar: "Myanma",
+  Namibia: "Namibiya",
+  Nauru: "Nauru",
+  Nepal: "Nepal",
+  Netherlands: "Niderlandiya",
+  "New Zealand": "Yangi Zelandiya",
+  Nicaragua: "Nikaragua",
+  Niger: "Niger",
+  Nigeria: "Nigeriya",
+  "North Korea": "Shimoliy Koreya",
+  "North Macedonia": "Shimoliy Makedoniya",
+  Norway: "Norvegiya",
+  Oman: "Ummon",
+  Pakistan: "Pokiston",
+  Palau: "Palau",
+  Palestine: "Falastin",
+  Panama: "Panama",
+  "Papua New Guinea": "Papua-Yangi Gvineya",
+  Paraguay: "Paragvay",
+  Peru: "Peru",
+  Philippines: "Filippin",
+  Poland: "Polsha",
+  Portugal: "Portugaliya",
+  Qatar: "Qatar",
+  Romania: "Ruminiya",
+  Russia: "Rossiya",
+  Rwanda: "Ruanda",
+  "Saint Kitts and Nevis": "Sent-Kits va Nevis",
+  "Saint Lucia": "Sent-Lyusiya",
+  "Saint Vincent and the Grenadines": "Sent-Vinsent va Grenadinlar",
+  Samoa: "Samoa",
+  "San Marino": "San-Marino",
+  "Sao Tome and Principe": "San-Tome va Prinsipi",
+  "Saudi Arabia": "Saudiya Arabistoni",
+  Senegal: "Senegal",
+  Serbia: "Serbiya",
+  Seychelles: "Seyshel orollari",
+  "Sierra Leone": "Syerra-Leone",
+  Singapore: "Singapur",
+  Slovakia: "Slovakiya",
+  Slovenia: "Sloveniya",
+  "Solomon Islands": "Solomon orollari",
+  Somalia: "Somali",
+  "South Africa": "Janubiy Afrika",
+  "South Korea": "Janubiy Koreya",
+  "South Sudan": "Janubiy Sudan",
+  Spain: "Ispaniya",
+  "Sri Lanka": "Shri-Lanka",
+  Sudan: "Sudan",
+  Suriname: "Surinam",
+  Sweden: "Shvetsiya",
+  Switzerland: "Shveytsariya",
+  Syria: "Suriya",
+  Tajikistan: "Tojikiston",
+  Tanzania: "Tanzaniya",
+  Thailand: "Tailand",
+  "Timor-Leste": "Sharqiy Timor",
+  Togo: "Togo",
+  Tonga: "Tonga",
+  "Trinidad and Tobago": "Trinidad va Tobago",
+  Tunisia: "Tunis",
+  Turkey: "Turkiya",
+  Turkmenistan: "Turkmaniston",
+  Tuvalu: "Tuvalu",
+  Uganda: "Uganda",
+  Ukraine: "Ukraina",
+  "United Arab Emirates": "Birlashgan Arab Amirliklari",
+  "United Kingdom": "Buyuk Britaniya",
+  USA: "AQSh",
+  Uruguay: "Urugvay",
+  Uzbekistan: "O'zbekiston",
+  Vanuatu: "Vanuatu",
+  "Vatican City": "Vatikan",
+  Venezuela: "Venesuela",
+  Vietnam: "Vetnam",
+  Yemen: "Yaman",
+  Zambia: "Zambiya",
+  Zimbabwe: "Zimbabve",
+};
 const SHARED_GENRES = [
   "Action",
   "Adventure",
@@ -46,16 +445,19 @@ let isCatalogLoading = true;
 const sectionConfig = {
   filmlar: {
     title: "Filmlar",
+    subtitle: "Yangi va mashhur filmlarni tomosha qiling",
     searchPlaceholder: "Kino qidirish...",
     ariaLabel: "Filmlar ro'yxati",
   },
   seriallar: {
     title: "Seriallar",
+    subtitle: "Yangi va mashhur seriallarni tomosha qiling",
     searchPlaceholder: "Serial qidirish...",
     ariaLabel: "Seriallar ro'yxati",
   },
   admin: {
     title: "Admin panel",
+    subtitle: "",
     searchPlaceholder: "",
     ariaLabel: "Admin panel",
   },
@@ -64,8 +466,16 @@ const sectionConfig = {
 // DOM references: cached once for predictable UI updates.
 const kinoGrid = document.querySelector("#kino-grid");
 const catalogTitle = document.querySelector("#catalog-title");
+const catalogSubtitle = document.querySelector("#catalog-subtitle");
 const catalogHeader = document.querySelector(".catalog-header");
 const catalogSection = document.querySelector("#catalog-section");
+const catalogFooter = document.querySelector("#catalog-footer");
+const catalogStats = document.querySelector("#catalog-stats");
+const catalogPagination = document.querySelector("#catalog-pagination");
+const filterResetButton = document.querySelector("[data-filter-reset]");
+const filterToggleButtons = document.querySelectorAll("[data-filter-toggle]");
+const filterOptionMenus = document.querySelectorAll("[data-filter-options]");
+const filterLabels = document.querySelectorAll("[data-filter-label]");
 const detailPage = document.querySelector("#detail-page");
 const detailContent = document.querySelector("#detail-content");
 const adminPanel = document.querySelector("#admin-panel");
@@ -132,6 +542,13 @@ const logoutButton = document.querySelector("#logout-button");
 
 let activeSection = "filmlar";
 let searchTerm = "";
+let currentCatalogPage = 1;
+let catalogFilters = {
+  genre: "",
+  country: "",
+  year: "",
+  sort: "newest",
+};
 let activeDetailSection = "filmlar";
 let slugEditedManually = false;
 let posterPreviewDataUrl = "";
@@ -416,6 +833,8 @@ function normalizeMovieSchema(item) {
     },
     download1080pUrl: downloadUrl,
     download1080pSize: downloadSize,
+    createdAt: item.createdAt ?? "",
+    updatedAt: item.updatedAt ?? "",
   };
 }
 
@@ -550,6 +969,8 @@ function normalizeSeriesSchema(item = {}) {
     },
     download1080pUrl: downloadUrl,
     download1080pSize: downloadSize,
+    createdAt: item.createdAt ?? "",
+    updatedAt: item.updatedAt ?? "",
   };
 }
 
@@ -1406,7 +1827,422 @@ function getSectionFromHash() {
   return "filmlar";
 }
 
+function normalizeFilterText(value) {
+  return value
+    .toString()
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[‘’ʻ]/g, "'")
+    .replace(/[^a-z0-9а-яё' -]/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+function getCountryOption(value) {
+  return WORLD_COUNTRIES.find((country) => country.label === value);
+}
+
+function getCountryDisplayLabel(value) {
+  return UZBEK_COUNTRY_LABELS[value] || value;
+}
+
+function getCountrySearchValues(value) {
+  const country = getCountryOption(value);
+  return [value, getCountryDisplayLabel(value), ...(country?.aliases || [])]
+    .map(normalizeFilterText)
+    .filter(Boolean);
+}
+
+function getBaseCatalogItems() {
+  return catalogItems
+    .map(normalizeCatalogItem)
+    .filter((item) => item.section === activeSection && item.status === "Published");
+}
+
+function getAvailableGenres(items = getBaseCatalogItems()) {
+  const genreMap = new Map();
+
+  items.forEach((item) => {
+    normalizeGenres(item.genres).forEach((genre) => {
+      const key = normalizeFilterText(genre);
+
+      if (key && !genreMap.has(key)) {
+        genreMap.set(key, genre);
+      }
+    });
+  });
+
+  return Array.from(genreMap.values()).sort((a, b) => a.localeCompare(b));
+}
+
+function getYearOptions(items = getBaseCatalogItems()) {
+  const currentYear = new Date().getFullYear();
+  const years = new Set();
+
+  for (let year = currentYear; year >= 1900; year -= 1) {
+    years.add(year.toString());
+  }
+
+  items.forEach((item) => {
+    const year = Number(item.year);
+
+    if (Number.isFinite(year) && year > 0) {
+      years.add(Math.round(year).toString());
+    }
+  });
+
+  return Array.from(years).sort((a, b) => Number(b) - Number(a));
+}
+
+function getSortLabel(value = catalogFilters.sort) {
+  return CATALOG_SORT_OPTIONS.find((option) => option.value === value)?.label || CATALOG_SORT_OPTIONS[0].label;
+}
+
+function hasActiveCatalogFilters() {
+  return Boolean(catalogFilters.genre || catalogFilters.country || catalogFilters.year || catalogFilters.sort !== "newest");
+}
+
+function closeFilterMenus(exceptType = "") {
+  filterOptionMenus.forEach((menu) => {
+    const type = menu.dataset.filterOptions;
+    const shouldKeepOpen = exceptType && type === exceptType;
+    menu.hidden = !shouldKeepOpen;
+  });
+
+  filterToggleButtons.forEach((button) => {
+    const type = button.dataset.filterToggle;
+    button.setAttribute("aria-expanded", (exceptType && type === exceptType).toString());
+  });
+}
+
+function getFilterOptions(type, items = getBaseCatalogItems()) {
+  if (type === "genre") {
+    return [
+      { value: "", label: "Barcha janrlar" },
+      ...getAvailableGenres(items).map((genre) => ({ value: genre, label: genre })),
+    ];
+  }
+
+  if (type === "country") {
+    const countryOptions = WORLD_COUNTRIES.map((country) => ({
+      value: country.label,
+      label: getCountryDisplayLabel(country.label),
+    })).sort((firstCountry, secondCountry) =>
+      firstCountry.label.localeCompare(secondCountry.label, "uz", { sensitivity: "base" })
+    );
+
+    return [
+      { value: "", label: "Barcha mamlakatlar" },
+      ...countryOptions,
+    ];
+  }
+
+  if (type === "year") {
+    return [
+      { value: "", label: "Barcha yillar" },
+      ...getYearOptions(items).map((year) => ({ value: year, label: year })),
+    ];
+  }
+
+  if (type === "sort") {
+    return CATALOG_SORT_OPTIONS;
+  }
+
+  return [];
+}
+
+function renderFilterMenu(type, items) {
+  const menu = document.querySelector(`[data-filter-options="${type}"]`);
+
+  if (!menu) {
+    return;
+  }
+
+  const options = getFilterOptions(type, items);
+  const activeValue = catalogFilters[type] ?? "";
+
+  if (!options.length) {
+    menu.innerHTML = '<span class="filter-option filter-option--empty">Variant yo\'q</span>';
+    return;
+  }
+
+  menu.innerHTML = options
+    .map((option) => {
+      const isActive = option.value === activeValue;
+      return `
+        <button class="filter-option${isActive ? " is-selected" : ""}" type="button" data-filter-type="${type}" data-filter-value="${escapeHtml(option.value)}">
+          ${escapeHtml(option.label)}
+        </button>
+      `;
+    })
+    .join("");
+}
+
+function renderCatalogFilters() {
+  const items = getBaseCatalogItems();
+
+  renderFilterMenu("genre", items);
+  renderFilterMenu("country", items);
+  renderFilterMenu("year", items);
+  renderFilterMenu("sort", items);
+
+  filterLabels.forEach((label) => {
+    const type = label.dataset.filterLabel;
+    const value = catalogFilters[type];
+
+    if (type === "genre") {
+      label.textContent = value || "Janr";
+    }
+
+    if (type === "country") {
+      label.textContent = value ? getCountryDisplayLabel(value) : "Mamlakat";
+    }
+
+    if (type === "year") {
+      label.textContent = value || "Yil";
+    }
+
+    if (type === "sort") {
+      label.textContent = getSortLabel(value);
+    }
+  });
+
+  filterToggleButtons.forEach((button) => {
+    const type = button.dataset.filterToggle;
+    const isActive = type === "sort" ? catalogFilters.sort !== "newest" : Boolean(catalogFilters[type]);
+    button.classList.toggle("filter-chip--active", isActive);
+  });
+
+  filterResetButton?.classList.toggle("filter-chip--active", !hasActiveCatalogFilters());
+  filterResetButton?.setAttribute("aria-pressed", (!hasActiveCatalogFilters()).toString());
+}
+
+function resetCatalogFilters({ render = true, clearSearch = true } = {}) {
+  catalogFilters = {
+    genre: "",
+    country: "",
+    year: "",
+    sort: "newest",
+  };
+
+  if (clearSearch) {
+    searchTerm = "";
+
+    if (searchInput) {
+      searchInput.value = "";
+    }
+  }
+
+  currentCatalogPage = 1;
+  closeFilterMenus();
+
+  if (render) {
+    renderCards();
+  }
+}
+
+function doesItemMatchGenre(item) {
+  if (!catalogFilters.genre) {
+    return true;
+  }
+
+  const activeGenre = normalizeFilterText(catalogFilters.genre);
+  return normalizeGenres(item.genres).some((genre) => normalizeFilterText(genre) === activeGenre);
+}
+
+function doesItemMatchCountry(item) {
+  if (!catalogFilters.country) {
+    return true;
+  }
+
+  const countryText = normalizeFilterText(item.country || "");
+
+  if (!countryText) {
+    return false;
+  }
+
+  return getCountrySearchValues(catalogFilters.country).some((country) => countryText.includes(country));
+}
+
+function doesItemMatchYear(item) {
+  if (!catalogFilters.year) {
+    return true;
+  }
+
+  return Number(item.year) === Number(catalogFilters.year);
+}
+
+function getCatalogSortTimestamp(item) {
+  const createdAt = Date.parse(item.createdAt);
+
+  if (Number.isFinite(createdAt)) {
+    return createdAt;
+  }
+
+  const updatedAt = Date.parse(item.updatedAt);
+
+  if (Number.isFinite(updatedAt)) {
+    return updatedAt;
+  }
+
+  const year = Number(item.year);
+
+  if (Number.isFinite(year) && year > 0) {
+    return new Date(Math.round(year), 0, 1).getTime();
+  }
+
+  return null;
+}
+
+function sortCatalogItems(items) {
+  const direction = catalogFilters.sort === "oldest" ? 1 : -1;
+
+  return [...items].sort((a, b) => {
+    const aTime = getCatalogSortTimestamp(a);
+    const bTime = getCatalogSortTimestamp(b);
+
+    if (aTime !== null && bTime !== null && aTime !== bTime) {
+      return (aTime - bTime) * direction;
+    }
+
+    if (aTime !== null && bTime === null) {
+      return -1;
+    }
+
+    if (aTime === null && bTime !== null) {
+      return 1;
+    }
+
+    return a.catalogIndex - b.catalogIndex;
+  });
+}
+
+function getFilteredCatalogItems() {
+  const normalizedSearchTerm = normalizeText(searchTerm);
+
+  const items = getBaseCatalogItems()
+    .map((item, catalogIndex) => ({ ...item, catalogIndex }))
+    .filter((item) => {
+      const searchableText = normalizeText(
+        `${item.titleUz} ${item.originalTitle} ${item.genres.join(" ")} ${item.country} ${item.year}`,
+      );
+      const matchesSearch = searchableText.includes(normalizedSearchTerm);
+
+      return (
+        matchesSearch &&
+        doesItemMatchGenre(item) &&
+        doesItemMatchCountry(item) &&
+        doesItemMatchYear(item)
+      );
+    });
+
+  return sortCatalogItems(items);
+}
+
 // Rendering: draw cards from the active section and current search term.
+function hideCatalogFooter() {
+  if (!catalogFooter) {
+    return;
+  }
+
+  catalogFooter.hidden = true;
+
+  if (catalogStats) {
+    catalogStats.textContent = "";
+  }
+
+  if (catalogPagination) {
+    catalogPagination.innerHTML = "";
+    catalogPagination.hidden = true;
+  }
+}
+
+function getPaginationTokens(totalPages) {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const pages = new Set([1, totalPages, currentCatalogPage - 1, currentCatalogPage, currentCatalogPage + 1]);
+
+  if (currentCatalogPage <= 4) {
+    [2, 3, 4, 5].forEach((page) => pages.add(page));
+  }
+
+  if (currentCatalogPage >= totalPages - 3) {
+    [totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1].forEach((page) => pages.add(page));
+  }
+
+  const sortedPages = Array.from(pages)
+    .filter((page) => page >= 1 && page <= totalPages)
+    .sort((a, b) => a - b);
+
+  return sortedPages.flatMap((page, index) => {
+    const previousPage = sortedPages[index - 1];
+
+    if (index > 0 && page - previousPage > 1) {
+      return [`ellipsis-${previousPage}-${page}`, page];
+    }
+
+    return [page];
+  });
+}
+
+function renderCatalogFooter(totalItems, totalPages) {
+  if (!catalogFooter) {
+    return;
+  }
+
+  catalogFooter.hidden = false;
+
+  if (catalogStats) {
+    const contentLabel = activeSection === "seriallar" ? "serial" : "film";
+    const dailyLabel = activeSection === "seriallar" ? "seriallar" : "filmlar";
+    const formattedCount = totalItems.toLocaleString("uz-UZ");
+
+    catalogStats.innerHTML = `
+      <span><i class="ti ti-circle-dashed-check" aria-hidden="true"></i>${formattedCount} ${contentLabel}</span>
+      <span>Har kuni yangi ${dailyLabel}</span>
+    `;
+  }
+
+  if (!catalogPagination) {
+    return;
+  }
+
+  if (totalPages <= 1) {
+    catalogPagination.innerHTML = "";
+    catalogPagination.hidden = true;
+    return;
+  }
+
+  catalogPagination.hidden = false;
+  catalogPagination.innerHTML = [
+    `
+      <button class="pagination-button pagination-button--icon" type="button" data-page-number="${currentCatalogPage - 1}" ${currentCatalogPage === 1 ? "disabled" : ""} aria-label="Oldingi sahifa">
+        <i class="ti ti-chevron-left" aria-hidden="true"></i>
+      </button>
+    `,
+    ...getPaginationTokens(totalPages).map((token) => {
+      if (typeof token === "string") {
+        return '<span class="pagination-ellipsis" aria-hidden="true">...</span>';
+      }
+
+      const isActive = token === currentCatalogPage;
+      return `
+        <button class="pagination-button${isActive ? " pagination-button--active" : ""}" type="button" data-page-number="${token}" ${isActive ? 'aria-current="page"' : ""}>
+          ${token}
+        </button>
+      `;
+    }),
+    `
+      <button class="pagination-button pagination-button--icon" type="button" data-page-number="${currentCatalogPage + 1}" ${currentCatalogPage === totalPages ? "disabled" : ""} aria-label="Keyingi sahifa">
+        <i class="ti ti-chevron-right" aria-hidden="true"></i>
+      </button>
+    `,
+  ].join("");
+}
+
 function renderCards() {
   if (isCatalogLoading) {
     const loadingLabel = activeSection === "seriallar" ? "Seriallar yuklanmoqda..." : "Filmlar yuklanmoqda...";
@@ -1416,44 +2252,50 @@ function renderCards() {
         <h2>${loadingLabel}</h2>
       </div>
     `;
+    hideCatalogFooter();
     return;
   }
 
-  const filteredItems = catalogItems.map(normalizeCatalogItem).filter((item) => {
-    const isActiveSection = item.section === activeSection;
-    const isPublished = item.status === "Published";
-    const searchableText = normalizeText(
-      `${item.titleUz} ${item.originalTitle} ${item.genres.join(" ")} ${item.year}`,
-    );
-    const matchesSearch = searchableText.includes(normalizeText(searchTerm));
+  renderCatalogFilters();
 
-    return isActiveSection && isPublished && matchesSearch;
-  });
+  const filteredItems = getFilteredCatalogItems();
 
   if (!filteredItems.length) {
     const sectionLabel = activeSection === "seriallar" ? "seriallar" : "filmlar";
+    const emptyTitle = searchTerm || hasActiveCatalogFilters() ? "Mos kontent topilmadi" : `Hozircha ${sectionLabel} yo'q`;
+    const emptyText =
+      searchTerm || hasActiveCatalogFilters()
+        ? "Qidiruv yoki filtrlarni o'zgartirib qayta urinib ko'ring."
+        : "Admin paneldan yangi kontent yuklanganda shu yerda paydo bo'ladi va saqlanib qoladi.";
     kinoGrid.innerHTML = `
       <div class="catalog-empty" role="status">
         <i class="ti ti-photo-off" aria-hidden="true"></i>
-        <h2>Hozircha ${sectionLabel} yo'q</h2>
-        <p>Admin paneldan yangi kontent yuklanganda shu yerda paydo bo'ladi va saqlanib qoladi.</p>
+        <h2>${emptyTitle}</h2>
+        <p>${emptyText}</p>
       </div>
     `;
+    hideCatalogFooter();
     return;
   }
 
-  kinoGrid.innerHTML = filteredItems
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / CATALOG_ITEMS_PER_PAGE));
+  currentCatalogPage = Math.min(Math.max(currentCatalogPage, 1), totalPages);
+
+  const pageStart = (currentCatalogPage - 1) * CATALOG_ITEMS_PER_PAGE;
+  const paginatedItems = filteredItems.slice(pageStart, pageStart + CATALOG_ITEMS_PER_PAGE);
+
+  kinoGrid.innerHTML = paginatedItems
     .map(
       (item) => `
-        <button class="film-card" type="button" data-film-id="${item.id}" aria-label="${item.titleUz}">
+        <button class="film-card" type="button" data-film-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.titleUz)}">
           <span class="film-card__poster">
-            <span class="rating-badge">${item.rating.toFixed(1)}</span>
-            <img src="${item.posterUrl}" alt="${item.titleUz} posteri" loading="lazy" />
+            <span class="rating-badge"><i class="ti ti-star-filled" aria-hidden="true"></i>${item.rating.toFixed(1)}</span>
+            <img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.titleUz)} posteri" loading="lazy" />
           </span>
           <span class="film-card__body">
-            <span class="film-card__title">${item.titleUz}</span>
+            <span class="film-card__title">${escapeHtml(item.titleUz)}</span>
             <span class="film-card__info">
-              <span class="film-card__genres">${item.genres.slice(0, 2).join(", ")}</span>
+              <span class="film-card__genres">${escapeHtml(item.genres.slice(0, 2).join(", "))}</span>
               <span class="film-card__year">${item.year}</span>
             </span>
           </span>
@@ -1461,6 +2303,8 @@ function renderCards() {
       `,
     )
     .join("");
+
+  renderCatalogFooter(filteredItems.length, totalPages);
 }
 
 function escapeHtml(value) {
@@ -2183,6 +3027,12 @@ function setActiveNav(section) {
   sectionLinks.forEach((link) => {
     const isActive = link.dataset.sectionLink === section;
     link.classList.toggle("site-nav__link--active", isActive);
+
+    if (isActive) {
+      link.setAttribute("aria-current", "page");
+    } else {
+      link.removeAttribute("aria-current");
+    }
   });
 }
 
@@ -2403,10 +3253,15 @@ function setSection(section, shouldResetSearch = false) {
   if (shouldResetSearch) {
     searchTerm = "";
     searchInput.value = "";
+    currentCatalogPage = 1;
+    resetCatalogFilters({ render: false });
   }
 
   const config = sectionConfig[activeSection];
   catalogTitle.textContent = config.title;
+  if (catalogSubtitle) {
+    catalogSubtitle.textContent = config.subtitle;
+  }
   searchInput.placeholder = config.searchPlaceholder;
   catalogSection.setAttribute("aria-label", config.ariaLabel);
   showCatalogShell();
@@ -2486,6 +3341,7 @@ function openDetailPage(itemId) {
   adminPanel.hidden = true;
   authPage.hidden = true;
   detailPage.hidden = false;
+  detailPage.style.setProperty("--detail-backdrop", `url(${JSON.stringify(item.posterUrl)})`);
 
   detailContent.innerHTML = `
     <article class="movie-detail">
@@ -2562,6 +3418,28 @@ function closeProfileDropdown() {
   profileToggle.setAttribute("aria-expanded", "false");
 }
 
+function renderProfileAvatar(user, label) {
+  const fallbackInitial = label.charAt(0).toUpperCase();
+  const avatarUrl = (user?.avatarUrl || user?.avatar || user?.photoUrl || "").toString().trim();
+
+  profileAvatar.replaceChildren();
+
+  if (!avatarUrl) {
+    profileAvatar.textContent = fallbackInitial;
+    return;
+  }
+
+  const avatarImage = document.createElement("img");
+  avatarImage.src = resolvePublicUrl(avatarUrl);
+  avatarImage.alt = "";
+  avatarImage.loading = "lazy";
+  avatarImage.addEventListener("error", () => {
+    profileAvatar.replaceChildren(document.createTextNode(fallbackInitial));
+  });
+
+  profileAvatar.append(avatarImage);
+}
+
 function updateAuthUI() {
   const isLoggedIn = Boolean(currentUser);
 
@@ -2574,7 +3452,7 @@ function updateAuthUI() {
   }
 
   const label = getUserLabel(currentUser);
-  profileAvatar.textContent = label.charAt(0).toUpperCase();
+  renderProfileAvatar(currentUser, label);
   profileName.textContent = label;
   profileAdminLink.hidden = currentUser.role !== "admin";
 }
@@ -2610,7 +3488,62 @@ backToCatalogButton.addEventListener("click", () => {
 
 searchInput.addEventListener("input", (event) => {
   searchTerm = event.target.value;
+  currentCatalogPage = 1;
   renderCards();
+});
+
+filterResetButton?.addEventListener("click", () => {
+  resetCatalogFilters();
+});
+
+filterToggleButtons.forEach((button) => {
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const type = button.dataset.filterToggle;
+    const menu = document.querySelector(`[data-filter-options="${type}"]`);
+    const shouldOpen = menu?.hidden;
+
+    closeFilterMenus(shouldOpen ? type : "");
+  });
+});
+
+filterOptionMenus.forEach((menu) => {
+  menu.addEventListener("click", (event) => {
+    const option = event.target.closest("[data-filter-value]");
+
+    if (!option) {
+      return;
+    }
+
+    const type = option.dataset.filterType;
+    const value = option.dataset.filterValue || "";
+
+    catalogFilters = {
+      ...catalogFilters,
+      [type]: value,
+    };
+    currentCatalogPage = 1;
+    closeFilterMenus();
+    renderCards();
+  });
+});
+
+catalogPagination?.addEventListener("click", (event) => {
+  const pageButton = event.target.closest("[data-page-number]");
+
+  if (!pageButton || pageButton.disabled) {
+    return;
+  }
+
+  const pageNumber = Number(pageButton.dataset.pageNumber);
+
+  if (!Number.isFinite(pageNumber) || pageNumber === currentCatalogPage) {
+    return;
+  }
+
+  currentCatalogPage = pageNumber;
+  renderCards();
+  catalogHeader.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 kinoGrid.addEventListener("click", (event) => {
@@ -2651,7 +3584,18 @@ document.addEventListener("click", (event) => {
     closeMultiSelectMenus();
   }
 
+  if (!event.target.closest("[data-filter-dropdown]")) {
+    closeFilterMenus();
+  }
+
   if (!event.target.closest("#profile-menu")) {
+    closeProfileDropdown();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeFilterMenus();
     closeProfileDropdown();
   }
 });
@@ -2660,6 +3604,12 @@ profileToggle.addEventListener("click", () => {
   const willOpen = profileDropdown.hidden;
   profileDropdown.hidden = !willOpen;
   profileToggle.setAttribute("aria-expanded", willOpen.toString());
+});
+
+profileDropdown.addEventListener("click", (event) => {
+  if (event.target.closest(".profile-menu__item")) {
+    closeProfileDropdown();
+  }
 });
 
 profileAdminLink.addEventListener("click", () => {
