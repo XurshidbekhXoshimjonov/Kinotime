@@ -8,6 +8,8 @@ const seriesCollectionName = process.env.MONGODB_SERIES_COLLECTION || "series";
 const assetsCollectionName = process.env.MONGODB_ASSETS_COLLECTION || "assets";
 const usersCollectionName = process.env.MONGODB_USERS_COLLECTION || "users";
 const downloadHistoryCollectionName = process.env.MONGODB_DOWNLOAD_HISTORY_COLLECTION || "downloadHistory";
+const analyticsEventsCollectionName = process.env.MONGODB_ANALYTICS_EVENTS_COLLECTION || "analytics_events";
+const dailyStatsCollectionName = process.env.MONGODB_DAILY_STATS_COLLECTION || "daily_stats";
 const dnsServers = (process.env.MONGODB_DNS_SERVERS || "8.8.8.8,1.1.1.1")
   .split(",")
   .map((server) => server.trim())
@@ -23,6 +25,8 @@ let seriesIndexesReady = false;
 let assetIndexesReady = false;
 let userIndexesReady = false;
 let downloadHistoryIndexesReady = false;
+let analyticsEventIndexesReady = false;
+let dailyStatsIndexesReady = false;
 
 function isMongoConfigured() {
   return Boolean(mongoUri);
@@ -111,8 +115,40 @@ async function getDownloadHistoryCollection() {
   return collection;
 }
 
+async function getAnalyticsEventsCollection() {
+  const db = await getDatabase();
+  const collection = db.collection(analyticsEventsCollectionName);
+
+  if (!analyticsEventIndexesReady) {
+    await collection.createIndex({ createdAt: -1 });
+    await collection.createIndex({ type: 1 });
+    await collection.createIndex({ movieId: 1 });
+    await collection.createIndex({ visitorId: 1 });
+    await collection.createIndex({ createdAt: -1, visitorId: 1 });
+    await collection.createIndex({ type: 1, createdAt: -1 });
+    analyticsEventIndexesReady = true;
+  }
+
+  return collection;
+}
+
+async function getDailyStatsCollection() {
+  const db = await getDatabase();
+  const collection = db.collection(dailyStatsCollectionName);
+
+  if (!dailyStatsIndexesReady) {
+    await collection.createIndex({ day: 1 }, { unique: true });
+    await collection.createIndex({ date: -1 });
+    dailyStatsIndexesReady = true;
+  }
+
+  return collection;
+}
+
 module.exports = {
+  getAnalyticsEventsCollection,
   getAssetsCollection,
+  getDailyStatsCollection,
   getDatabase,
   getDownloadHistoryCollection,
   getMoviesCollection,

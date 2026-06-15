@@ -6,6 +6,8 @@ const CATALOG_API_URL = buildApiUrl("/movies");
 const SERIES_API_URL = buildApiUrl("/series");
 const AUTH_API_URL = buildApiUrl("/auth");
 const DOWNLOAD_HISTORY_API_URL = buildApiUrl("/download-history");
+const ANALYTICS_API_URL = buildApiUrl("/analytics");
+const ADMIN_STATS_API_URL = buildApiUrl("/admin/stats");
 const POSTER_PLACEHOLDER =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='780' viewBox='0 0 520 780'%3E%3Crect width='520' height='780' fill='%23121722'/%3E%3Crect x='34' y='34' width='452' height='712' rx='28' fill='none' stroke='%23283144' stroke-width='4'/%3E%3Ctext x='260' y='390' fill='%23aab2c2' font-family='Arial,sans-serif' font-size='34' text-anchor='middle'%3EPoster%3C/text%3E%3C/svg%3E";
 const CATALOG_ITEMS_PER_PAGE = 12;
@@ -511,6 +513,13 @@ const seriesEpisodeSubmit = document.querySelector("#series-episode-submit");
 const seriesEpisodeCancel = document.querySelector("#series-episode-cancel");
 const seriesEpisodeList = document.querySelector("#series-episode-list");
 const seriesCloseEpisodes = document.querySelector("#series-close-episodes");
+const statisticsSummaryCards = document.querySelector("#statistics-summary-cards");
+const statisticsChart7 = document.querySelector("#statistics-chart-7");
+const statisticsChart30 = document.querySelector("#statistics-chart-30");
+const statisticsTopViewed = document.querySelector("#statistics-top-viewed");
+const statisticsTopDownloaded = document.querySelector("#statistics-top-downloaded");
+const statisticsFeedback = document.querySelector("#statistics-feedback");
+const adminRefreshStatistics = document.querySelector("#admin-refresh-statistics");
 const authPage = document.querySelector("#auth-page");
 const authPageTitle = document.querySelector("#auth-page-title");
 const authPageSubtitle = document.querySelector("#auth-page-subtitle");
@@ -571,12 +580,17 @@ let editingSeriesId = "";
 let selectedSeriesId = "";
 let editingEpisodeId = "";
 let isAdminSeriesLoading = false;
+let isStatisticsLoading = false;
+let lastStatisticsLoadedAt = 0;
+let statisticsSnapshot = null;
+let fallbackVisitorId = "";
 let currentUser = null;
 let pendingAuthRedirect = "";
 
 const USERS_STORAGE_KEY = "kinotime.users";
 const SESSION_STORAGE_KEY = "kinotime.session";
 const DOWNLOAD_HISTORY_STORAGE_KEY = "kinotime.downloadHistory";
+const VISITOR_ID_STORAGE_KEY = "kinotime.visitorId";
 const PASSWORD_ITERATIONS = 120000;
 const HASH_SECTION_ROUTES = new Set(["", "home", "filmlar", "seriallar", "admin", "login", "signup", "profile", "settings"]);
 
@@ -1914,7 +1928,112 @@ function getSafeDownloadUrl(value) {
   }
 }
 
+function createVisitorId() {
+  if (crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+
+  return `visitor-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
+function getVisitorId() {
+  try {
+    const storedVisitorId = localStorage.getItem(VISITOR_ID_STORAGE_KEY);
+
+    if (storedVisitorId) {
+      return storedVisitorId;
+    }
+
+    const visitorId = createVisitorId();
+    localStorage.setItem(VISITOR_ID_STORAGE_KEY, visitorId);
+    return visitorId;
+  } catch (error) {
+    if (!fallbackVisitorId) {
+      fallbackVisitorId = createVisitorId();
+    }
+
+    return fallbackVisitorId;
+  }
+}
+
+function shouldSendAnalytics() {
+  return !hasAdminAccess();
+}
+
+function sendAnalyticsEvent(endpoint, payload, options = {}) {
+  if (!shouldSendAnalytics()) {
+    return;
+  }
+
+  const visitorId = getVisitorId();
+
+  if (!visitorId) {
+    return;
+  }
+
+  const body = JSON.stringify({
+    ...payload,
+    visitorId,
+  });
+
+  if (options.useBeacon && navigator.sendBeacon) {
+    try {
+      const blob = new Blob([body], { type: "application/json" });
+
+      if (navigator.sendBeacon(endpoint, blob)) {
+        return;
+      }
+    } catch (error) {
+      // Fetch below keeps analytics failures isolated from navigation.
+    }
+  }
+
+  fetch(endpoint, {
+    method: "POST",
+    keepalive: true,
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body,
+  }).catch(() => {});
+}
+
+function getAnalyticsPath() {
+  return `${window.location.pathname}${window.location.search}${window.location.hash || ""}`;
+}
+
+function getContentAnalyticsId(item) {
+  const normalized = normalizeCatalogItem(item);
+  return normalized.slug || normalized.id || normalized.mongoId || "";
+}
+
+function trackPageView(movieId = "") {
+  sendAnalyticsEvent(
+    `${ANALYTICS_API_URL}/page-view`,
+    {
+      path: getAnalyticsPath(),
+      movieId,
+    },
+    { useBeacon: true },
+  );
+}
+
+function trackAnalyticsDownload(record) {
+  const movieId = record.analyticsMovieId || record.movieId || "";
+
+  if (!movieId) {
+    return;
+  }
+
+  sendAnalyticsEvent(`${ANALYTICS_API_URL}/download-click`, {
+    movieId,
+  });
+}
+
 function trackDownload(record) {
+  trackAnalyticsDownload(record);
+
   if (!currentUser) {
     return;
   }
@@ -3097,6 +3216,269 @@ function renderAdminSeriesList(errorMessage = "") {
     .join("");
 }
 
+function formatMetric(value) {
+  return new Intl.NumberFormat("en-US").format(Number(value || 0));
+}
+
+function setStatisticsFeedback(message = "", type = "") {
+  if (!statisticsFeedback) {
+    return;
+  }
+
+  statisticsFeedback.textContent = message;
+  statisticsFeedback.className = "admin-form__feedback statistics-feedback";
+
+  if (type) {
+    statisticsFeedback.classList.add(`statistics-feedback--${type}`);
+  }
+}
+
+function getSummaryCardMarkup(label, value, icon) {
+  return `
+    <article class="statistics-card">
+      <span class="statistics-card__icon">
+        <i class="ti ${icon}" aria-hidden="true"></i>
+      </span>
+      <div>
+        <p>${escapeHtml(label)}</p>
+        <strong>${escapeHtml(value)}</strong>
+      </div>
+    </article>
+  `;
+}
+
+function renderStatisticsSummary(summary = {}) {
+  if (!statisticsSummaryCards) {
+    return;
+  }
+
+  const cards = [
+    ["Today's visits", formatMetric(summary.todaysVisits), "ti-calendar-stats"],
+    ["Total visits", formatMetric(summary.totalVisits), "ti-eye"],
+    ["Online users right now", formatMetric(summary.onlineUsers), "ti-users"],
+    ["Total movies", formatMetric(summary.totalMovies), "ti-movie"],
+    ["Total series", formatMetric(summary.totalSeries), "ti-device-tv"],
+    ["Total download clicks", formatMetric(summary.totalDownloadClicks), "ti-download"],
+  ];
+
+  statisticsSummaryCards.innerHTML = cards.map(([label, value, icon]) => getSummaryCardMarkup(label, value, icon)).join("");
+}
+
+function renderStatisticsLoading() {
+  renderStatisticsSummary({
+    todaysVisits: 0,
+    totalVisits: 0,
+    onlineUsers: 0,
+    totalMovies: 0,
+    totalSeries: 0,
+    totalDownloadClicks: 0,
+  });
+
+  [statisticsChart7, statisticsChart30, statisticsTopViewed, statisticsTopDownloaded].forEach((container) => {
+    if (!container) {
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="admin-list-state">
+        <i class="ti ti-loader-2" aria-hidden="true"></i>
+        <span>Statistics loading...</span>
+      </div>
+    `;
+  });
+  setStatisticsFeedback("");
+}
+
+function renderStatisticsError(message) {
+  [statisticsChart7, statisticsChart30, statisticsTopViewed, statisticsTopDownloaded].forEach((container) => {
+    if (!container) {
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="admin-list-state admin-list-state--error">
+        <i class="ti ti-alert-circle" aria-hidden="true"></i>
+        <span>${escapeHtml(message)}</span>
+      </div>
+    `;
+  });
+  setStatisticsFeedback(message, "error");
+}
+
+function renderStatisticsTable(container, rows = []) {
+  if (!container) {
+    return;
+  }
+
+  if (!rows.length) {
+    container.innerHTML = `
+      <div class="admin-list-state">
+        <i class="ti ti-chart-bar-off" aria-hidden="true"></i>
+        <span>No analytics data yet.</span>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = `
+    <table class="statistics-table">
+      <thead>
+        <tr>
+          <th>Poster</th>
+          <th>Title</th>
+          <th>Type</th>
+          <th>View count</th>
+          <th>Download count</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows
+          .map((row) => {
+            const posterUrl = resolvePublicUrl(row.poster || POSTER_PLACEHOLDER);
+
+            return `
+              <tr>
+                <td>
+                  <img class="statistics-table__poster" src="${escapeHtml(posterUrl)}" alt="${escapeHtml(row.title)} poster" loading="lazy" />
+                </td>
+                <td>
+                  <strong>${escapeHtml(row.title)}</strong>
+                </td>
+                <td>
+                  <span class="statistics-type">${escapeHtml(row.type === "series" ? "series" : "movie")}</span>
+                </td>
+                <td>${formatMetric(row.viewCount)}</td>
+                <td>${formatMetric(row.downloadCount)}</td>
+              </tr>
+            `;
+          })
+          .join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderStatisticsChart(container, chart = {}) {
+  if (!container) {
+    return;
+  }
+
+  const days = Array.isArray(chart.days) ? chart.days : [];
+
+  if (!days.length) {
+    container.innerHTML = `
+      <div class="admin-list-state">
+        <i class="ti ti-chart-line" aria-hidden="true"></i>
+        <span>No chart data yet.</span>
+      </div>
+    `;
+    return;
+  }
+
+  const maxValue = Math.max(
+    1,
+    ...days.flatMap((item) => [Number(item.visits || 0), Number(item.downloadClicks || 0)]),
+  );
+
+  container.innerHTML = `
+    <div class="statistics-chart__legend">
+      <span><i class="statistics-dot statistics-dot--visits" aria-hidden="true"></i> Daily visits</span>
+      <span><i class="statistics-dot statistics-dot--downloads" aria-hidden="true"></i> Daily download clicks</span>
+    </div>
+    <div class="statistics-chart__plot">
+      ${days
+        .map((item) => {
+          const visits = Number(item.visits || 0);
+          const downloads = Number(item.downloadClicks || 0);
+          const visitHeight = Math.max(3, Math.round((visits / maxValue) * 100));
+          const downloadHeight = Math.max(3, Math.round((downloads / maxValue) * 100));
+
+          return `
+            <div class="statistics-chart__day">
+              <div class="statistics-chart__bars" title="${escapeHtml(item.day)}: ${visits} visits, ${downloads} downloads">
+                <span class="statistics-chart__bar statistics-chart__bar--visits" style="height: ${visitHeight}%"></span>
+                <span class="statistics-chart__bar statistics-chart__bar--downloads" style="height: ${downloadHeight}%"></span>
+              </div>
+              <span class="statistics-chart__label">${escapeHtml(item.label || item.day)}</span>
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function renderStatisticsDashboard(snapshot) {
+  if (!snapshot) {
+    return;
+  }
+
+  renderStatisticsSummary(snapshot.summary);
+  renderStatisticsChart(statisticsChart7, snapshot.chart7);
+  renderStatisticsChart(statisticsChart30, snapshot.chart30);
+  renderStatisticsTable(statisticsTopViewed, snapshot.topMovies?.topViewed || []);
+  renderStatisticsTable(statisticsTopDownloaded, snapshot.topMovies?.topDownloaded || []);
+  setStatisticsFeedback(`Updated ${new Date().toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}.`, "success");
+}
+
+async function fetchAdminStatsJson(path) {
+  const response = await fetch(`${ADMIN_STATS_API_URL}${path}`, {
+    headers: getAuthHeaders({ Accept: "application/json" }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    throw new Error(errorBody.error || "Statistics could not be loaded.");
+  }
+
+  return response.json();
+}
+
+async function loadAdminStatistics(options = {}) {
+  if (!hasAdminAccess() || !statisticsSummaryCards) {
+    return;
+  }
+
+  if (isStatisticsLoading) {
+    return;
+  }
+
+  const canUseSnapshot =
+    statisticsSnapshot &&
+    !options.force &&
+    Date.now() - lastStatisticsLoadedAt < 30 * 1000;
+
+  if (canUseSnapshot) {
+    renderStatisticsDashboard(statisticsSnapshot);
+    return;
+  }
+
+  isStatisticsLoading = true;
+  renderStatisticsLoading();
+
+  try {
+    const [summary, topMovies, chart7, chart30] = await Promise.all([
+      fetchAdminStatsJson("/summary"),
+      fetchAdminStatsJson("/top-movies"),
+      fetchAdminStatsJson("/chart?range=7"),
+      fetchAdminStatsJson("/chart?range=30"),
+    ]);
+
+    statisticsSnapshot = {
+      summary,
+      topMovies,
+      chart7,
+      chart30,
+    };
+    lastStatisticsLoadedAt = Date.now();
+    renderStatisticsDashboard(statisticsSnapshot);
+  } catch (error) {
+    renderStatisticsError(error.message);
+  } finally {
+    isStatisticsLoading = false;
+  }
+}
+
 function getSeriesEpisodeContainer(form) {
   return form === seriesEditForm ? seriesEditEpisodes : seriesCreateEpisodes;
 }
@@ -3622,7 +4004,7 @@ function setActiveNav(section) {
 }
 
 function setActiveAdminPanel(panel) {
-  activeAdminPanel = panel === "series" ? "series" : "movies";
+  activeAdminPanel = ["movies", "series", "statistics"].includes(panel) ? panel : "movies";
 
   adminTabButtons.forEach((button) => {
     const isActive = button.dataset.adminTab === activeAdminPanel;
@@ -3634,6 +4016,10 @@ function setActiveAdminPanel(panel) {
     panelElement.hidden = panelElement.dataset.adminPanel !== activeAdminPanel;
     panelElement.classList.toggle("is-active", !panelElement.hidden);
   });
+
+  if (activeAdminPanel === "statistics") {
+    loadAdminStatistics();
+  }
 }
 
 function showCatalogShell() {
@@ -3801,6 +4187,7 @@ function setSection(section, shouldResetSearch = false) {
       history.replaceState(null, "", "#login");
       renderAuthPage("login");
       closeMobileMenu();
+      trackPageView();
       return;
     }
 
@@ -3811,6 +4198,7 @@ function setSection(section, shouldResetSearch = false) {
       renderAuthPage("login");
       setAuthFeedback("Admin panel uchun admin email va parol bilan kiring.", "error");
       closeMobileMenu();
+      trackPageView();
       return;
     }
 
@@ -3827,6 +4215,7 @@ function setSection(section, shouldResetSearch = false) {
       renderEpisodePanel();
       loadCatalogFromApi();
     }
+    trackPageView();
     return;
   }
 
@@ -3852,6 +4241,7 @@ function setSection(section, shouldResetSearch = false) {
     }
 
     closeMobileMenu();
+    trackPageView();
     return;
   }
 
@@ -3863,6 +4253,7 @@ function setSection(section, shouldResetSearch = false) {
     }
 
     renderAuthPage(section);
+    trackPageView();
     return;
   }
 
@@ -3882,6 +4273,7 @@ function setSection(section, shouldResetSearch = false) {
   catalogSection.setAttribute("aria-label", config.ariaLabel);
   showCatalogShell();
   renderCards();
+  trackPageView();
 }
 
 // Detail page: show metadata and movie downloads or series episodes.
@@ -3923,7 +4315,7 @@ function openDetailPage(itemOrId, options = {}) {
                       <span class="download-row__label">S${episode.seasonNumber} E${episode.episodeNumber}: ${escapeHtml(episode.title)}</span>
                       <span class="download-badge">${escapeHtml(episode.description || "Episode")}</span>
                     </div>
-                    <a class="download-row__button" href="${escapeHtml(episode.downloadLink || episode.videoUrl)}" download aria-label="${escapeHtml(episode.title)} yuklab olish" data-download-track data-download-movie-id="${escapeHtml(`${item.id}-${episode.id}`)}" data-download-title="${escapeHtml(`${item.titleUz} - S${episode.seasonNumber} E${episode.episodeNumber}: ${episode.title}`)}" data-download-poster="${escapeHtml(item.posterUrl)}" data-download-quality="${escapeHtml(episode.quality || item.quality || "1080p")}" data-download-size="${escapeHtml(episode.fileSize || "")}" data-download-format="${escapeHtml(episode.format || item.format || "MP4")}">
+                    <a class="download-row__button" href="${escapeHtml(episode.downloadLink || episode.videoUrl)}" download aria-label="${escapeHtml(episode.title)} yuklab olish" data-download-track data-download-content-id="${escapeHtml(getContentAnalyticsId(item))}" data-download-movie-id="${escapeHtml(`${item.id}-${episode.id}`)}" data-download-title="${escapeHtml(`${item.titleUz} - S${episode.seasonNumber} E${episode.episodeNumber}: ${episode.title}`)}" data-download-poster="${escapeHtml(item.posterUrl)}" data-download-quality="${escapeHtml(episode.quality || item.quality || "1080p")}" data-download-size="${escapeHtml(episode.fileSize || "")}" data-download-format="${escapeHtml(episode.format || item.format || "MP4")}">
                       <i class="ti ti-download" aria-hidden="true"></i>
                     </a>
                   </div>
@@ -3942,7 +4334,7 @@ function openDetailPage(itemOrId, options = {}) {
               <span class="download-badge">${escapeHtml(download.size || item.download1080pSize || "")}</span>
               <span class="download-badge download-badge--format">${escapeHtml(download.format || item.format || "MP4")}</span>
             </div>
-            <a class="download-row__button" href="${escapeHtml(download.url || item.download1080pUrl || "#")}" download aria-label="Download 1080p" data-download-track data-download-movie-id="${escapeHtml(item.id)}" data-download-title="${escapeHtml(item.titleUz)}" data-download-poster="${escapeHtml(item.posterUrl)}" data-download-quality="1080p" data-download-size="${escapeHtml(download.size || item.download1080pSize || "")}" data-download-format="${escapeHtml(download.format || item.format || "MP4")}">
+            <a class="download-row__button" href="${escapeHtml(download.url || item.download1080pUrl || "#")}" download aria-label="Download 1080p" data-download-track data-download-content-id="${escapeHtml(getContentAnalyticsId(item))}" data-download-movie-id="${escapeHtml(item.id)}" data-download-title="${escapeHtml(item.titleUz)}" data-download-poster="${escapeHtml(item.posterUrl)}" data-download-quality="1080p" data-download-size="${escapeHtml(download.size || item.download1080pSize || "")}" data-download-format="${escapeHtml(download.format || item.format || "MP4")}">
               <i class="ti ti-download" aria-hidden="true"></i>
             </a>
           </div>
@@ -4021,6 +4413,7 @@ function openDetailPage(itemOrId, options = {}) {
     }
   }
 
+  trackPageView(getContentAnalyticsId(item));
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -4201,6 +4594,7 @@ detailContent.addEventListener("click", (event) => {
   if (downloadLink) {
     trackDownload({
       movieId: downloadLink.dataset.downloadMovieId,
+      analyticsMovieId: downloadLink.dataset.downloadContentId || downloadLink.dataset.downloadMovieId,
       title: downloadLink.dataset.downloadTitle,
       poster: downloadLink.dataset.downloadPoster,
       quality: downloadLink.dataset.downloadQuality,
@@ -4357,6 +4751,10 @@ adminTabButtons.forEach((button) => {
   button.addEventListener("click", () => {
     setActiveAdminPanel(button.dataset.adminTab);
   });
+});
+
+adminRefreshStatistics?.addEventListener("click", () => {
+  loadAdminStatistics({ force: true });
 });
 
 adminRefreshMovies.addEventListener("click", () => {

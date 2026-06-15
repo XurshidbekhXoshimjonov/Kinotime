@@ -375,6 +375,10 @@
                 <i class="ti ti-device-tv" aria-hidden="true"></i>
                 Series
               </button>
+              <button class="admin-tab" type="button" role="tab" aria-selected="false" data-admin-tab="statistics">
+                <i class="ti ti-chart-bar" aria-hidden="true"></i>
+                Statistics
+              </button>
             </div>
 
             <section class="admin-view is-active" id="admin-movies-panel" data-admin-panel="movies" aria-labelledby="admin-movie-form-title">
@@ -1020,6 +1024,59 @@
                   </div>
                   <div class="admin-series-list" id="admin-series-list" aria-live="polite"></div>
                 </section>
+              </div>
+            </section>
+
+            <section class="admin-view" id="admin-statistics-panel" data-admin-panel="statistics" aria-labelledby="admin-statistics-title" hidden>
+              <div class="admin-section-heading statistics-heading">
+                <div>
+                  <h3 id="admin-statistics-title">Statistics</h3>
+                  <p>Real-time visits, downloads and content performance.</p>
+                </div>
+                <button class="button button--ghost" type="button" id="admin-refresh-statistics">
+                  <i class="ti ti-refresh" aria-hidden="true"></i>
+                  Refresh
+                </button>
+              </div>
+
+              <div class="statistics-dashboard" aria-live="polite">
+                <div class="statistics-summary-grid" id="statistics-summary-cards"></div>
+
+                <div class="statistics-chart-grid">
+                  <section class="statistics-panel" aria-labelledby="statistics-chart-7-title">
+                    <div class="statistics-panel__header">
+                      <h4 id="statistics-chart-7-title">Last 7 days</h4>
+                      <span>Visits and downloads</span>
+                    </div>
+                    <div class="statistics-chart" id="statistics-chart-7"></div>
+                  </section>
+
+                  <section class="statistics-panel" aria-labelledby="statistics-chart-30-title">
+                    <div class="statistics-panel__header">
+                      <h4 id="statistics-chart-30-title">Last 30 days</h4>
+                      <span>Visits and downloads</span>
+                    </div>
+                    <div class="statistics-chart statistics-chart--compact" id="statistics-chart-30"></div>
+                  </section>
+                </div>
+
+                <div class="statistics-tables-grid">
+                  <section class="statistics-panel" aria-labelledby="statistics-top-viewed-title">
+                    <div class="statistics-panel__header">
+                      <h4 id="statistics-top-viewed-title">Top 10 most viewed movies/series</h4>
+                    </div>
+                    <div class="statistics-table-wrap" id="statistics-top-viewed"></div>
+                  </section>
+
+                  <section class="statistics-panel" aria-labelledby="statistics-top-downloaded-title">
+                    <div class="statistics-panel__header">
+                      <h4 id="statistics-top-downloaded-title">Top 10 most downloaded movies/series</h4>
+                    </div>
+                    <div class="statistics-table-wrap" id="statistics-top-downloaded"></div>
+                  </section>
+                </div>
+
+                <p class="admin-form__feedback statistics-feedback" id="statistics-feedback" role="status"></p>
               </div>
             </section>
           </div>

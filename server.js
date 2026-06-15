@@ -6,7 +6,9 @@ const fs = require("fs");
 const path = require("path");
 const { ObjectId } = require("mongodb");
 const {
+  getAnalyticsEventsCollection,
   getAssetsCollection,
+  getDailyStatsCollection,
   getDatabase,
   getDownloadHistoryCollection,
   getMoviesCollection,
@@ -1293,6 +1295,285 @@ function toClientDownloadHistory(document) {
     downloadedAt: history.downloadedAt || history.updatedAt || history.createdAt || "",
   };
 }
+
+function getDayKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function getStartOfDay(date = new Date()) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function getLastDayKeys(range) {
+  const days = [];
+  const today = getStartOfDay();
+
+  for (let index = range - 1; index >= 0; index -= 1) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - index);
+    days.push({
+      day: getDayKey(date),
+      date,
+      label: date.toLocaleDateString("uz-UZ", { month: "short", day: "numeric" }),
+    });
+  }
+
+  return days;
+}
+
+function normalizeAnalyticsText(value, maxLength = 512) {
+  return String(value || "")
+    .trim()
+    .slice(0, maxLength);
+}
+
+async function recordAnalyticsEvent(type, req) {
+  if (!isMongoConfigured()) {
+    return;
+  }
+
+  const visitorId = normalizeAnalyticsText(req.body.visitorId, 128);
+
+  if (!visitorId) {
+    return;
+  }
+
+  const now = new Date();
+  const day = getDayKey(now);
+  const event = {
+    type,
+    path: normalizeAnalyticsText(req.body.path, 2048),
+    movieId: normalizeAnalyticsText(req.body.movieId, 128),
+    visitorId,
+    createdAt: now,
+  };
+
+  if (type === "page_view") {
+    event.userAgent = normalizeAnalyticsText(req.get("user-agent"), 512);
+  }
+
+  const eventsCollection = await getAnalyticsEventsCollection();
+  const dailyStatsCollection = await getDailyStatsCollection();
+  const increment = type === "download_click" ? { downloadClicks: 1 } : { visits: 1 };
+
+  await eventsCollection.insertOne(event);
+  await dailyStatsCollection.updateOne(
+    { day },
+    {
+      $inc: increment,
+      $set: {
+        day,
+        date: getStartOfDay(now),
+        updatedAt: now,
+      },
+      $setOnInsert: {
+        createdAt: now,
+      },
+    },
+    { upsert: true },
+  );
+}
+
+function getContentLookupKeyValues(item) {
+  return [item.mongoId, item.slug, item.id].filter(Boolean);
+}
+
+function buildStatsContentLookup(items, type) {
+  const lookup = new Map();
+
+  items.forEach((item) => {
+    getContentLookupKeyValues(item).forEach((key) => {
+      lookup.set(key, {
+        movieId: item.id || item.slug || item.mongoId || key,
+        poster: item.posterUrl || "",
+        title: item.titleUz || item.title || item.originalTitle || key,
+        type,
+      });
+    });
+  });
+
+  return lookup;
+}
+
+function toStatsTableRows(stats, contentLookup, sortKey) {
+  return stats
+    .map((item) => {
+      const content = contentLookup.get(item.movieId) || {
+        movieId: item.movieId,
+        poster: "",
+        title: item.movieId,
+        type: "movie",
+      };
+
+      return {
+        ...content,
+        viewCount: item.viewCount || 0,
+        downloadCount: item.downloadCount || 0,
+      };
+    })
+    .filter((item) => item[sortKey] > 0)
+    .sort((first, second) => {
+      if (second[sortKey] !== first[sortKey]) {
+        return second[sortKey] - first[sortKey];
+      }
+
+      return second.title.localeCompare(first.title);
+    })
+    .slice(0, 10);
+}
+
+app.post("/api/analytics/page-view", async (req, res) => {
+  try {
+    await recordAnalyticsEvent("page_view", req);
+  } catch (error) {
+    console.error("Analytics page view failed:", error.message);
+  }
+
+  res.status(204).end();
+});
+
+app.post("/api/analytics/download-click", async (req, res) => {
+  try {
+    await recordAnalyticsEvent("download_click", req);
+  } catch (error) {
+    console.error("Analytics download click failed:", error.message);
+  }
+
+  res.status(204).end();
+});
+
+app.get("/api/admin/stats/summary", requireMongo, requireAdmin, async (req, res) => {
+  try {
+    const analyticsCollection = await getAnalyticsEventsCollection();
+    const dailyStatsCollection = await getDailyStatsCollection();
+    const moviesCollection = await getMoviesCollection();
+    const seriesCollection = await getSeriesCollection();
+    const todayKey = getDayKey();
+    const onlineSince = new Date(Date.now() - 5 * 60 * 1000);
+
+    const [todayStats, totals, onlineVisitorIds, totalMovies, totalSeries] = await Promise.all([
+      dailyStatsCollection.findOne({ day: todayKey }),
+      dailyStatsCollection
+        .aggregate([
+          {
+            $group: {
+              _id: null,
+              totalVisits: { $sum: "$visits" },
+              totalDownloadClicks: { $sum: "$downloadClicks" },
+            },
+          },
+        ])
+        .next(),
+      analyticsCollection.distinct("visitorId", { createdAt: { $gte: onlineSince } }),
+      moviesCollection.estimatedDocumentCount(),
+      seriesCollection.estimatedDocumentCount(),
+    ]);
+
+    res.json({
+      todaysVisits: Number(todayStats?.visits || 0),
+      totalVisits: Number(totals?.totalVisits || 0),
+      onlineUsers: onlineVisitorIds.filter(Boolean).length,
+      totalMovies,
+      totalSeries,
+      totalDownloadClicks: Number(totals?.totalDownloadClicks || 0),
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/admin/stats/top-movies", requireMongo, requireAdmin, async (req, res) => {
+  try {
+    const analyticsCollection = await getAnalyticsEventsCollection();
+    const moviesCollection = await getMoviesCollection();
+    const seriesCollection = await getSeriesCollection();
+    const [stats, movies, series] = await Promise.all([
+      analyticsCollection
+        .aggregate([
+          {
+            $match: {
+              type: { $in: ["page_view", "download_click"] },
+              movieId: { $exists: true, $ne: "" },
+            },
+          },
+          {
+            $group: {
+              _id: "$movieId",
+              viewCount: {
+                $sum: {
+                  $cond: [{ $eq: ["$type", "page_view"] }, 1, 0],
+                },
+              },
+              downloadCount: {
+                $sum: {
+                  $cond: [{ $eq: ["$type", "download_click"] }, 1, 0],
+                },
+              },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              movieId: "$_id",
+              viewCount: 1,
+              downloadCount: 1,
+            },
+          },
+        ])
+        .toArray(),
+      moviesCollection
+        .find({
+          $and: [{ type: { $ne: "Serial" } }, { section: { $ne: "seriallar" } }],
+        })
+        .toArray(),
+      seriesCollection.find({}).toArray(),
+    ]);
+
+    const lookup = new Map([
+      ...buildStatsContentLookup(movies.map(toClientMovie), "movie"),
+      ...buildStatsContentLookup(series.map(toClientSeries), "series"),
+    ]);
+
+    res.json({
+      topViewed: toStatsTableRows(stats, lookup, "viewCount"),
+      topDownloaded: toStatsTableRows(stats, lookup, "downloadCount"),
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/admin/stats/chart", requireMongo, requireAdmin, async (req, res) => {
+  try {
+    const range = Number(req.query.range) === 30 ? 30 : 7;
+    const days = getLastDayKeys(range);
+    const dailyStatsCollection = await getDailyStatsCollection();
+    const documents = await dailyStatsCollection
+      .find({ day: { $in: days.map((item) => item.day) } })
+      .toArray();
+    const statsByDay = new Map(documents.map((document) => [document.day, document]));
+
+    res.json({
+      range,
+      days: days.map((item) => {
+        const stats = statsByDay.get(item.day) || {};
+
+        return {
+          day: item.day,
+          label: item.label,
+          visits: Number(stats.visits || 0),
+          downloadClicks: Number(stats.downloadClicks || 0),
+        };
+      }),
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 app.post("/api/download-history", requireMongo, requireAuth, async (req, res) => {
   try {

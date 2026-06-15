@@ -2201,6 +2201,282 @@ body.is-auth-page .site-search {
   color: #f87171;
 }
 
+.statistics-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.statistics-dashboard {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.statistics-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(150px, 1fr));
+  gap: var(--space-3);
+}
+
+.statistics-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  border: 1px solid rgba(79, 107, 255, 0.22);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  background:
+    linear-gradient(135deg, rgba(37, 99, 235, 0.13), rgba(124, 58, 237, 0.08)),
+    rgba(18, 23, 34, 0.62);
+  box-shadow: 0 16px 34px rgba(2, 6, 23, 0.22);
+}
+
+.statistics-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: var(--radius-sm);
+  background: rgba(8, 12, 19, 0.66);
+  color: #93c5fd;
+  font-size: 1.25rem;
+}
+
+.statistics-card p {
+  margin: 0 0 3px;
+  color: var(--color-muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.statistics-card strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--color-text);
+  font-size: 1.55rem;
+  line-height: 1.05;
+}
+
+.statistics-chart-grid,
+.statistics-tables-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+
+.statistics-panel {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  background: rgba(18, 23, 34, 0.56);
+}
+
+.statistics-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.statistics-panel__header h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.statistics-panel__header span {
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.statistics-chart {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.statistics-chart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  color: var(--color-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.statistics-chart__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.statistics-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+}
+
+.statistics-dot--visits {
+  background: #60a5fa;
+}
+
+.statistics-dot--downloads {
+  background: #a78bfa;
+}
+
+.statistics-chart__plot {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  min-height: 220px;
+  overflow-x: auto;
+  border: 1px solid rgba(40, 49, 68, 0.88);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-3) var(--space-3);
+  background:
+    linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+    rgba(8, 12, 19, 0.62);
+  background-size: 100% 25%;
+}
+
+.statistics-chart--compact .statistics-chart__plot {
+  gap: 6px;
+}
+
+.statistics-chart__day {
+  display: grid;
+  flex: 1 0 40px;
+  gap: var(--space-2);
+  min-width: 40px;
+}
+
+.statistics-chart--compact .statistics-chart__day {
+  flex-basis: 26px;
+  min-width: 26px;
+}
+
+.statistics-chart__bars {
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  gap: 4px;
+  height: 172px;
+}
+
+.statistics-chart__bar {
+  display: block;
+  width: 10px;
+  min-height: 3px;
+  border-radius: 6px 6px 2px 2px;
+}
+
+.statistics-chart--compact .statistics-chart__bar {
+  width: 7px;
+}
+
+.statistics-chart__bar--visits {
+  background: linear-gradient(180deg, #93c5fd, #2563eb);
+}
+
+.statistics-chart__bar--downloads {
+  background: linear-gradient(180deg, #c4b5fd, #7c3aed);
+}
+
+.statistics-chart__label {
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statistics-table-wrap {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.statistics-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+}
+
+.statistics-table th,
+.statistics-table td {
+  border-bottom: 1px solid rgba(40, 49, 68, 0.88);
+  padding: 10px 12px;
+  color: var(--color-soft);
+  font-size: 0.84rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.statistics-table th {
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.statistics-table tbody tr:hover {
+  background: rgba(79, 107, 255, 0.08);
+}
+
+.statistics-table__poster {
+  display: block;
+  width: 44px;
+  height: 62px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  background: #111827;
+}
+
+.statistics-table strong {
+  display: block;
+  max-width: 280px;
+  overflow: hidden;
+  color: var(--color-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statistics-type {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  border: 1px solid rgba(79, 107, 255, 0.24);
+  border-radius: var(--radius-sm);
+  padding: 0 8px;
+  background: rgba(79, 107, 255, 0.1);
+  color: #dbeafe;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.statistics-feedback {
+  color: var(--color-muted);
+}
+
+.statistics-feedback--success {
+  color: #4ade80;
+}
+
+.statistics-feedback--error {
+  color: #f87171;
+}
+
 .admin-movie-item,
 .added-movie-item {
   display: flex;
@@ -3338,6 +3614,10 @@ footer {
     grid-template-columns: 1fr;
   }
 
+  .statistics-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   #series-create-form,
   #series-edit-panel,
   #series-preview-panel,
@@ -3600,6 +3880,18 @@ footer {
 
   .admin-manager__header {
     display: grid;
+  }
+
+  .statistics-heading,
+  .statistics-panel__header {
+    display: grid;
+    align-items: start;
+  }
+
+  .statistics-summary-grid,
+  .statistics-chart-grid,
+  .statistics-tables-grid {
+    grid-template-columns: 1fr;
   }
 
   .admin-series-list {
