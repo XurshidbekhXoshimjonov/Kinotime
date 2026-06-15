@@ -113,14 +113,14 @@
                   <path d="M3 12h13" />
                   <path d="m13 9 3 3-3 3" />
                 </svg>
-                Login
+                Kirish
               </button>
               <button class="button auth-button auth-button--signup" type="button" data-auth-link="signup">
                 <svg class="auth-button__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                   <path d="M8 7a4 4 0 1 0 8 0 4 4 0 0 0-8 0" />
                   <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
                 </svg>
-                Sign Up
+                Ro'yxatdan o'tish
               </button>
             </div>
 
@@ -134,7 +134,7 @@
               aria-haspopup="menu"
             >
               <span class="profile-menu__avatar" id="profile-avatar">U</span>
-              <span class="profile-menu__name" id="profile-name">User</span>
+              <span class="profile-menu__name" id="profile-name">Foydalanuvchi</span>
               <i class="ti ti-chevron-down profile-menu__arrow" aria-hidden="true"></i>
             </button>
 
@@ -145,7 +145,7 @@
                 </button>
                 <button class="profile-menu__item profile-menu__item--admin" type="button" id="profile-admin-link" role="menuitem" hidden>
                   <i class="ti ti-shield-star" aria-hidden="true"></i>
-                  Admin panel
+                  Admin paneli
                 </button>
                 <button class="profile-menu__item" type="button" id="settings-page-link" role="menuitem">
                   <i class="ti ti-settings" aria-hidden="true"></i>
@@ -285,13 +285,13 @@
             </svg>
 
             <div class="auth-page__intro">
-              <h1 id="auth-page-title">Welcome back</h1>
+              <h1 id="auth-page-title">Xush kelibsiz</h1>
               <p id="auth-page-subtitle">KinoTime profilingizga kiring</p>
             </div>
 
             <form class="auth-page__form" id="login-form" data-auth-page-form="login" novalidate>
               <label class="auth-field">
-                <span class="auth-field__label">Email</span>
+                <span class="auth-field__label">Elektron pochta</span>
                 <div class="auth-field__control">
                   <i class="ti ti-mail auth-field__icon" aria-hidden="true"></i>
                   <input type="email" name="email" placeholder="email@example.com" autocomplete="email" />
@@ -311,7 +311,7 @@
                 <p class="auth-field__error" data-field-error="password"></p>
               </label>
 
-              <button class="auth-page__submit" type="submit">Login</button>
+              <button class="auth-page__submit" type="submit">Kirish</button>
             </form>
 
             <form class="auth-page__form" id="signup-form" data-auth-page-form="signup" novalidate hidden>
@@ -325,7 +325,7 @@
               </label>
 
               <label class="auth-field">
-                <span class="auth-field__label">Email</span>
+                <span class="auth-field__label">Elektron pochta</span>
                 <div class="auth-field__control">
                   <i class="ti ti-mail auth-field__icon" aria-hidden="true"></i>
                   <input type="email" name="email" placeholder="email@example.com" autocomplete="email" />
@@ -345,7 +345,7 @@
                 <p class="auth-field__error" data-field-error="password"></p>
               </label>
 
-              <button class="auth-page__submit" type="submit">Sign Up</button>
+              <button class="auth-page__submit" type="submit">Ro'yxatdan o'tish</button>
             </form>
 
             <p class="auth-page__feedback" id="auth-page-feedback" role="status"></p>
@@ -362,28 +362,28 @@
 
           <div class="admin-workspace admin-page-content" id="admin-workspace">
             <div class="admin-panel__header">
-              <h2 id="admin-title">Admin panel</h2>
+              <h2 id="admin-title">Admin paneli</h2>
               <p>Filmlar va seriallar alohida boshqariladi.</p>
             </div>
 
             <div class="admin-tabs" role="tablist" aria-label="Admin bo'limlari">
               <button class="admin-tab is-active" type="button" role="tab" aria-selected="true" data-admin-tab="movies">
                 <i class="ti ti-movie" aria-hidden="true"></i>
-                Movies
+                Filmlar
               </button>
               <button class="admin-tab" type="button" role="tab" aria-selected="false" data-admin-tab="series">
                 <i class="ti ti-device-tv" aria-hidden="true"></i>
-                Series
+                Seriallar
               </button>
               <button class="admin-tab" type="button" role="tab" aria-selected="false" data-admin-tab="statistics">
                 <i class="ti ti-chart-bar" aria-hidden="true"></i>
-                Statistics
+                Statistika
               </button>
             </div>
 
             <section class="admin-view is-active" id="admin-movies-panel" data-admin-panel="movies" aria-labelledby="admin-movie-form-title">
               <div class="admin-section-heading">
-                <h3 id="admin-movie-form-title">Add New Movie</h3>
+                <h3 id="admin-movie-form-title">Yangi film qo'shish</h3>
                 <p>Yuklab olish uchun bitta 1080p havola ishlatiladi.</p>
               </div>
 
@@ -393,41 +393,41 @@
                   <legend>Asosiy ma'lumotlar</legend>
 
                   <label class="field">
-                    <span>Uzbek Title</span>
+                    <span>Film nomi</span>
                     <input type="text" name="titleUz" placeholder="Film nomi" required />
                   </label>
 
                   <label class="field">
-                    <span>Original Title</span>
-                    <input type="text" name="originalTitle" placeholder="Original nomi" required />
+                    <span>Asl nomi</span>
+                    <input type="text" name="originalTitle" placeholder="Asl nomi" required />
                   </label>
 
                   <label class="field">
-                    <span>Slug</span>
+                    <span>URL nomi</span>
                     <input type="text" name="slug" placeholder="qaronlik-ortida" required />
                   </label>
 
                   <label class="field field--wide">
-                    <span>Description / Tavsif</span>
+                    <span>Tavsif</span>
                     <textarea name="description" rows="5" maxlength="1000" placeholder="Film haqida qisqacha ma'lumot..." required></textarea>
                   </label>
                 </fieldset>
 
                 <fieldset class="admin-fieldset">
-                  <legend>Movie metadata</legend>
+                  <legend>Film ma'lumotlari</legend>
 
                   <label class="field">
-                    <span>Year / Yil</span>
+                    <span>Yil</span>
                     <input type="number" name="year" min="1900" max="2100" value="2026" required />
                   </label>
 
                   <label class="field">
-                    <span>Country / Davlat</span>
+                    <span>Davlat</span>
                     <input type="text" name="country" placeholder="AQSh, Buyuk Britaniya" required />
                   </label>
 
                   <div class="field field--wide">
-                    <span>Genre / Janr</span>
+                    <span>Janr</span>
                     <div class="multi-select" data-multi-select="genres">
                       <select class="multi-select__native" name="genres" multiple required tabindex="-1" aria-label="Janrlar" data-shared-genres>
                         <option value="Action">Action</option>
@@ -468,7 +468,7 @@
                   </div>
 
                   <div class="field field--wide">
-                    <span>Languages / Til</span>
+                    <span>Tillar</span>
                     <div class="multi-select" data-multi-select="languages">
                       <select class="multi-select__native" name="languages" multiple required tabindex="-1" aria-label="Tillar">
                         <option value="O‘zbek">O‘zbek</option>
@@ -478,7 +478,7 @@
                         <option value="Hind">Hind</option>
                         <option value="Koreys">Koreys</option>
                         <option value="Yapon">Yapon</option>
-                        <option value="Original">Original</option>
+                        <option value="Original">Asl til</option>
                       </select>
                       <div class="multi-select__control">
                         <div class="multi-select__tags" data-selected-tags="languages"></div>
@@ -492,25 +492,25 @@
                   </div>
 
                   <label class="field">
-                    <span>Duration / Davomiyligi</span>
+                    <span>Davomiyligi</span>
                     <input type="text" name="duration" placeholder="180 daqiqa" required />
                   </label>
 
                   <label class="field">
-                    <span>Director / Rejissor</span>
+                    <span>Rejissor</span>
                     <input type="text" name="director" placeholder="Christopher Nolan" required />
                   </label>
 
                   <label class="field">
-                    <span>Rating / Reyting</span>
+                    <span>Reyting</span>
                     <input type="number" name="rating" min="0" max="10" step="0.1" value="8.5" required />
                   </label>
 
                   <label class="field">
-                    <span>Status / Holati</span>
+                    <span>Holati</span>
                     <select name="status" required>
-                      <option value="Published">Published</option>
-                      <option value="Draft">Draft</option>
+                      <option value="Published">E'lon qilingan</option>
+                      <option value="Draft">Qoralama</option>
                     </select>
                   </label>
                 </fieldset>
@@ -519,26 +519,26 @@
                   <legend>Media</legend>
 
                   <label class="field">
-                    <span>Poster image upload</span>
+                    <span>Poster rasm yuklash</span>
                     <input type="file" name="posterFile" accept="image/png,image/jpeg,image/webp" />
                   </label>
 
                   <label class="field">
-                    <span>Poster image URL</span>
+                    <span>Poster rasm havolasi</span>
                     <input type="url" name="posterUrl" placeholder="https://example.com/poster.jpg" />
                   </label>
                 </fieldset>
 
                 <fieldset class="admin-fieldset">
-                  <legend>Quality and video</legend>
+                  <legend>Sifat va video</legend>
 
                   <label class="field">
-                    <span>Quality / Sifat</span>
+                    <span>Sifat</span>
                     <input type="text" name="quality" value="Full HD" readonly />
                   </label>
 
                   <label class="field">
-                    <span>Video source / Video</span>
+                    <span>Video manbasi</span>
                     <select name="videoSource" required>
                       <option value="WEB-DL">WEB-DL</option>
                       <option value="WEBRip">WEBRip</option>
@@ -555,15 +555,15 @@
                 </fieldset>
 
                 <fieldset class="admin-fieldset">
-                  <legend>Download</legend>
+                  <legend>Yuklab olish</legend>
 
                   <label class="field">
-                    <span>1080p Download URL</span>
+                    <span>1080p yuklab olish havolasi</span>
                     <input type="url" name="download1080pUrl" placeholder="https://example.com/download/film-1080p.mp4" required />
                   </label>
 
                   <label class="field">
-                    <span>Format</span>
+                    <span>Fayl formati</span>
                     <select name="format" required>
                       <option value="MP4" selected>MP4</option>
                       <option value="MKV">MKV</option>
@@ -573,17 +573,17 @@
                   </label>
 
                   <label class="field">
-                    <span>File size</span>
+                    <span>Fayl hajmi</span>
                     <input type="text" name="download1080pSize" placeholder="2.4 GB" required />
                   </label>
                 </fieldset>
 
                 <div class="admin-form__actions">
                   <button class="button button--primary admin-form__submit" type="submit">
-                    Add Movie
+                    Film qo'shish
                   </button>
                   <button class="button button--ghost" type="reset" id="admin-cancel-edit">
-                    Cancel
+                    Bekor qilish
                   </button>
                 </div>
 
@@ -596,7 +596,7 @@
                     <h3 id="admin-preview-title">Ko'rinish oldindan ko'rish</h3>
                     <button class="button button--ghost admin-preview__edit" type="button" id="admin-preview-edit" disabled hidden>
                       <i class="ti ti-edit" aria-hidden="true"></i>
-                      Edit
+                      Tahrirlash
                     </button>
                   </div>
                   <article class="preview-card">
@@ -606,7 +606,7 @@
                     </div>
                     <div class="preview-card__body">
                       <h4 id="preview-title">Yangi film</h4>
-                      <p id="preview-original">Original nomi</p>
+                      <p id="preview-original">Asl nomi</p>
                       <p id="preview-meta">2026 • Janr • O‘zbek</p>
                       <div class="preview-card__tags">
                         <span id="preview-quality">Full HD</span>
@@ -639,7 +639,7 @@
 
             <section class="admin-view" id="admin-series-panel" data-admin-panel="series" aria-labelledby="admin-series-title" hidden>
               <div class="admin-section-heading">
-                <h3 id="admin-series-title">Series Management</h3>
+                <h3 id="admin-series-title">Seriallarni boshqarish</h3>
                 <p>Seriallar, mavsumlar va qismlar alohida saqlanadi.</p>
               </div>
 
@@ -650,46 +650,46 @@
                       <legend>Asosiy ma'lumotlar</legend>
 
                       <label class="field">
-                        <span>Uzbek Title / Serial nomi</span>
+                        <span>Serial nomi</span>
                         <input type="text" name="titleUz" placeholder="Serial nomi" required />
                       </label>
 
                       <label class="field">
-                        <span>Original Title</span>
-                        <input type="text" name="originalTitle" placeholder="Original nomi" required />
+                        <span>Asl nomi</span>
+                        <input type="text" name="originalTitle" placeholder="Asl nomi" required />
                       </label>
 
                       <label class="field">
-                        <span>Slug</span>
+                        <span>URL nomi</span>
                         <input type="text" name="slug" placeholder="serial-nomi" required />
                       </label>
 
                       <label class="field field--wide">
-                        <span>Description / Tavsif</span>
+                        <span>Tavsif</span>
                         <textarea name="description" rows="4" maxlength="1000" placeholder="Serial haqida qisqacha..." required></textarea>
                       </label>
                     </fieldset>
 
                     <fieldset class="admin-fieldset">
-                      <legend>Series metadata</legend>
+                      <legend>Serial ma'lumotlari</legend>
 
                       <label class="field">
-                        <span>Year / Yil</span>
+                        <span>Yil</span>
                         <input type="number" name="year" min="1900" max="2100" value="2026" required />
                       </label>
 
                       <label class="field">
-                        <span>Country / Davlat</span>
+                        <span>Davlat</span>
                         <input type="text" name="country" placeholder="AQSh, Koreya" required />
                       </label>
 
                       <label class="field">
-                        <span>Duration / Davomiyligi</span>
-                        <input type="text" name="duration" placeholder="45 min" required />
+                        <span>Davomiyligi</span>
+                        <input type="text" name="duration" placeholder="45 daqiqa" required />
                       </label>
 
                       <div class="field field--wide">
-                        <span>Genre / Janr</span>
+                        <span>Janr</span>
                         <div class="multi-select" data-multi-select="genres">
                           <select class="multi-select__native" name="genres" multiple required tabindex="-1" aria-label="Serial janrlari" data-shared-genres></select>
                           <div class="multi-select__control">
@@ -704,7 +704,7 @@
                       </div>
 
                       <div class="field field--wide">
-                        <span>Languages / Til</span>
+                        <span>Tillar</span>
                         <div class="multi-select" data-multi-select="languages">
                           <select class="multi-select__native" name="languages" multiple required tabindex="-1" aria-label="Serial tillari">
                             <option value="O‘zbek">O‘zbek</option>
@@ -714,7 +714,7 @@
                             <option value="Hind">Hind</option>
                             <option value="Koreys">Koreys</option>
                             <option value="Yapon">Yapon</option>
-                            <option value="Original">Original</option>
+                            <option value="Original">Asl til</option>
                           </select>
                           <div class="multi-select__control">
                             <div class="multi-select__tags" data-selected-tags="languages"></div>
@@ -728,25 +728,25 @@
                       </div>
 
                       <label class="field">
-                        <span>Seasons</span>
+                        <span>Mavsumlar</span>
                         <input type="number" name="seasonsCount" min="0" placeholder="1" />
                       </label>
 
                       <label class="field">
-                        <span>Episodes / Qismlar</span>
+                        <span>Qismlar</span>
                         <input type="number" name="episodesCount" min="0" placeholder="8" />
                       </label>
 
                       <label class="field">
-                        <span>Rating / Reyting</span>
+                        <span>Reyting</span>
                         <input type="number" name="rating" min="0" max="10" step="0.1" value="8.0" required />
                       </label>
 
                       <label class="field">
-                        <span>Status / Holati</span>
+                        <span>Holati</span>
                         <select name="status" required>
-                          <option value="Published">Published</option>
-                          <option value="Draft">Draft</option>
+                          <option value="Published">E'lon qilingan</option>
+                          <option value="Draft">Qoralama</option>
                         </select>
                       </label>
                     </fieldset>
@@ -755,23 +755,23 @@
                       <legend>Media</legend>
 
                       <label class="field">
-                        <span>Poster image upload</span>
+                        <span>Poster rasm yuklash</span>
                         <input type="file" name="posterFile" accept="image/png,image/jpeg,image/webp" />
                       </label>
 
                       <label class="field">
-                        <span>Poster image URL</span>
+                        <span>Poster rasm havolasi</span>
                         <input type="url" name="posterUrl" placeholder="https://example.com/poster.jpg" />
                       </label>
                     </fieldset>
 
                     <fieldset class="admin-fieldset series-episode-fieldset">
-                      <legend>Episodes</legend>
+                      <legend>Qismlar</legend>
                       <div class="series-episode-toolbar field--wide">
-                        <p>Serial qismlarini shu yerda qo'shing. Har bir qism o'z download/video havolasiga ega.</p>
+                        <p>Serial qismlarini shu yerda qo'shing. Har bir qism o'z yuklab olish/video havolasiga ega.</p>
                         <button class="button button--ghost" type="button" data-add-episode="create">
                           <i class="ti ti-plus" aria-hidden="true"></i>
-                          Add Episode
+                          Qism qo'shish
                         </button>
                       </div>
                       <div class="series-episode-rows field--wide" id="series-create-episodes"></div>
@@ -780,24 +780,24 @@
                     <div class="admin-form__actions">
                       <button class="button button--ghost" type="button" data-series-preview-form="create">
                         <i class="ti ti-eye" aria-hidden="true"></i>
-                        Preview
+                        Oldindan ko'rish
                       </button>
                       <button class="button button--primary" type="submit">
                         <i class="ti ti-plus" aria-hidden="true"></i>
-                        Create Series
+                        Serial yaratish
                       </button>
                       <button class="button button--ghost" type="reset">
-                        Clear
+                        Tozalash
                       </button>
                     </div>
                   </form>
 
                   <section class="admin-edit-panel" id="series-edit-panel" aria-labelledby="series-edit-title" hidden>
                     <div class="admin-edit-panel__header">
-                      <h4 id="series-edit-title">Edit Series</h4>
+                      <h4 id="series-edit-title">Serialni tahrirlash</h4>
                       <button class="button button--ghost" type="button" id="series-cancel-edit">
                         <i class="ti ti-x" aria-hidden="true"></i>
-                        Cancel Edit
+                        Tahrirlashni bekor qilish
                       </button>
                     </div>
 
@@ -806,46 +806,46 @@
                         <legend>Asosiy ma'lumotlar</legend>
 
                         <label class="field">
-                          <span>Uzbek Title / Serial nomi</span>
+                          <span>Serial nomi</span>
                           <input type="text" name="titleUz" required />
                         </label>
 
                         <label class="field">
-                          <span>Original Title</span>
+                          <span>Asl nomi</span>
                           <input type="text" name="originalTitle" required />
                         </label>
 
                         <label class="field">
-                          <span>Slug</span>
+                          <span>URL nomi</span>
                           <input type="text" name="slug" required readonly />
                         </label>
 
                         <label class="field field--wide">
-                          <span>Description / Tavsif</span>
+                          <span>Tavsif</span>
                           <textarea name="description" rows="4" maxlength="1000" required></textarea>
                         </label>
                       </fieldset>
 
                       <fieldset class="admin-fieldset">
-                        <legend>Series metadata</legend>
+                        <legend>Serial ma'lumotlari</legend>
 
                         <label class="field">
-                          <span>Year / Yil</span>
+                          <span>Yil</span>
                           <input type="number" name="year" min="1900" max="2100" required />
                         </label>
 
                         <label class="field">
-                          <span>Country / Davlat</span>
+                          <span>Davlat</span>
                           <input type="text" name="country" required />
                         </label>
 
                         <label class="field">
-                          <span>Duration / Davomiyligi</span>
+                          <span>Davomiyligi</span>
                           <input type="text" name="duration" required />
                         </label>
 
                         <div class="field field--wide">
-                          <span>Genre / Janr</span>
+                          <span>Janr</span>
                           <div class="multi-select" data-multi-select="genres">
                             <select class="multi-select__native" name="genres" multiple required tabindex="-1" aria-label="Serial janrlari" data-shared-genres></select>
                             <div class="multi-select__control">
@@ -860,7 +860,7 @@
                         </div>
 
                         <div class="field field--wide">
-                          <span>Languages / Til</span>
+                          <span>Tillar</span>
                           <div class="multi-select" data-multi-select="languages">
                             <select class="multi-select__native" name="languages" multiple required tabindex="-1" aria-label="Serial tillari">
                               <option value="O‘zbek">O‘zbek</option>
@@ -870,7 +870,7 @@
                               <option value="Hind">Hind</option>
                               <option value="Koreys">Koreys</option>
                               <option value="Yapon">Yapon</option>
-                              <option value="Original">Original</option>
+                              <option value="Original">Asl til</option>
                             </select>
                             <div class="multi-select__control">
                               <div class="multi-select__tags" data-selected-tags="languages"></div>
@@ -884,25 +884,25 @@
                         </div>
 
                         <label class="field">
-                          <span>Seasons</span>
+                          <span>Mavsumlar</span>
                           <input type="number" name="seasonsCount" min="0" />
                         </label>
 
                         <label class="field">
-                          <span>Episodes / Qismlar</span>
+                          <span>Qismlar</span>
                           <input type="number" name="episodesCount" min="0" />
                         </label>
 
                         <label class="field">
-                          <span>Rating / Reyting</span>
+                          <span>Reyting</span>
                           <input type="number" name="rating" min="0" max="10" step="0.1" required />
                         </label>
 
                         <label class="field">
-                          <span>Status / Holati</span>
+                          <span>Holati</span>
                           <select name="status" required>
-                            <option value="Published">Published</option>
-                            <option value="Draft">Draft</option>
+                            <option value="Published">E'lon qilingan</option>
+                            <option value="Draft">Qoralama</option>
                           </select>
                         </label>
                       </fieldset>
@@ -911,23 +911,23 @@
                         <legend>Media</legend>
 
                         <label class="field">
-                          <span>Poster image upload</span>
+                          <span>Poster rasm yuklash</span>
                           <input type="file" name="posterFile" accept="image/png,image/jpeg,image/webp" />
                         </label>
 
                         <label class="field">
-                          <span>Poster image URL</span>
+                          <span>Poster rasm havolasi</span>
                           <input type="url" name="posterUrl" />
                         </label>
                       </fieldset>
 
                       <fieldset class="admin-fieldset series-episode-fieldset">
-                        <legend>Episodes</legend>
+                        <legend>Qismlar</legend>
                         <div class="series-episode-toolbar field--wide">
-                          <p>Edit existing episodes or add more before saving the series.</p>
+                          <p>Mavjud qismlarni tahrirlang yoki serialni saqlashdan oldin yana qism qo'shing.</p>
                           <button class="button button--ghost" type="button" data-add-episode="edit">
                             <i class="ti ti-plus" aria-hidden="true"></i>
-                            Add Episode
+                            Qism qo'shish
                           </button>
                         </div>
                         <div class="series-episode-rows field--wide" id="series-edit-episodes"></div>
@@ -936,11 +936,11 @@
                       <div class="admin-form__actions">
                         <button class="button button--ghost" type="button" data-series-preview-form="edit">
                           <i class="ti ti-eye" aria-hidden="true"></i>
-                          Preview
+                          Oldindan ko'rish
                         </button>
                         <button class="button button--primary" type="submit">
                           <i class="ti ti-device-floppy" aria-hidden="true"></i>
-                          Save Series
+                          Serialni saqlash
                         </button>
                       </div>
                     </form>
@@ -951,7 +951,7 @@
                       <h3 id="series-preview-title">Ko'rinish oldindan ko'rish</h3>
                       <button class="button button--ghost admin-preview__edit" type="button" id="series-preview-close" hidden>
                         <i class="ti ti-x" aria-hidden="true"></i>
-                        Clear
+                        Tozalash
                       </button>
                     </div>
                     <div id="series-preview-content"></div>
@@ -960,48 +960,48 @@
                   <section class="admin-episode-panel" id="series-episode-panel" aria-labelledby="series-episode-title" hidden>
                     <div class="admin-edit-panel__header">
                       <div>
-                        <h4 id="series-episode-title">Episodes</h4>
+                        <h4 id="series-episode-title">Qismlar</h4>
                         <p id="series-episode-subtitle"></p>
                       </div>
                       <button class="button button--ghost" type="button" id="series-close-episodes">
                         <i class="ti ti-x" aria-hidden="true"></i>
-                        Close
+                        Yopish
                       </button>
                     </div>
 
                     <form class="episode-form" id="series-episode-form" novalidate>
                       <label class="field">
-                        <span>Episode title</span>
+                        <span>Qism nomi</span>
                         <input type="text" name="title" required />
                       </label>
 
                       <label class="field">
-                        <span>Episode number</span>
+                        <span>Qism raqami</span>
                         <input type="number" name="episodeNumber" min="1" required />
                       </label>
 
                       <label class="field">
-                        <span>Season number</span>
+                        <span>Mavsum raqami</span>
                         <input type="number" name="seasonNumber" min="1" required />
                       </label>
 
                       <label class="field">
-                        <span>Video/download link</span>
+                        <span>Video/yuklab olish havolasi</span>
                         <input type="url" name="videoUrl" required />
                       </label>
 
                       <label class="field field--wide">
-                        <span>Description</span>
+                        <span>Tavsif</span>
                         <textarea name="description" rows="3" maxlength="600"></textarea>
                       </label>
 
                       <div class="admin-form__actions">
                         <button class="button button--primary" type="submit" id="series-episode-submit">
                           <i class="ti ti-plus" aria-hidden="true"></i>
-                          Add Episode
+                          Qism qo'shish
                         </button>
                         <button class="button button--ghost" type="button" id="series-episode-cancel">
-                          Cancel
+                          Bekor qilish
                         </button>
                       </div>
                     </form>
@@ -1030,12 +1030,12 @@
             <section class="admin-view" id="admin-statistics-panel" data-admin-panel="statistics" aria-labelledby="admin-statistics-title" hidden>
               <div class="admin-section-heading statistics-heading">
                 <div>
-                  <h3 id="admin-statistics-title">Statistics</h3>
-                  <p>Real-time visits, downloads and content performance.</p>
+                  <h3 id="admin-statistics-title">Statistika</h3>
+                  <p>Real vaqtdagi tashriflar, yuklab olishlar va kontent natijalari.</p>
                 </div>
                 <button class="button button--ghost" type="button" id="admin-refresh-statistics">
                   <i class="ti ti-refresh" aria-hidden="true"></i>
-                  Refresh
+                  Yangilash
                 </button>
               </div>
 
@@ -1045,16 +1045,16 @@
                 <div class="statistics-chart-grid">
                   <section class="statistics-panel" aria-labelledby="statistics-chart-7-title">
                     <div class="statistics-panel__header">
-                      <h4 id="statistics-chart-7-title">Last 7 days</h4>
-                      <span>Visits and downloads</span>
+                      <h4 id="statistics-chart-7-title">So'nggi 7 kun</h4>
+                      <span>Tashriflar va yuklab olishlar</span>
                     </div>
                     <div class="statistics-chart" id="statistics-chart-7"></div>
                   </section>
 
                   <section class="statistics-panel" aria-labelledby="statistics-chart-30-title">
                     <div class="statistics-panel__header">
-                      <h4 id="statistics-chart-30-title">Last 30 days</h4>
-                      <span>Visits and downloads</span>
+                      <h4 id="statistics-chart-30-title">So'nggi 30 kun</h4>
+                      <span>Tashriflar va yuklab olishlar</span>
                     </div>
                     <div class="statistics-chart statistics-chart--compact" id="statistics-chart-30"></div>
                   </section>
@@ -1063,14 +1063,14 @@
                 <div class="statistics-tables-grid">
                   <section class="statistics-panel" aria-labelledby="statistics-top-viewed-title">
                     <div class="statistics-panel__header">
-                      <h4 id="statistics-top-viewed-title">Top 10 most viewed movies/series</h4>
+                      <h4 id="statistics-top-viewed-title">Eng ko'p ko'rilgan 10 film/serial</h4>
                     </div>
                     <div class="statistics-table-wrap" id="statistics-top-viewed"></div>
                   </section>
 
                   <section class="statistics-panel" aria-labelledby="statistics-top-downloaded-title">
                     <div class="statistics-panel__header">
-                      <h4 id="statistics-top-downloaded-title">Top 10 most downloaded movies/series</h4>
+                      <h4 id="statistics-top-downloaded-title">Eng ko'p yuklab olingan 10 film/serial</h4>
                     </div>
                     <div class="statistics-table-wrap" id="statistics-top-downloaded"></div>
                   </section>
@@ -1084,7 +1084,7 @@
       </main>
 
       <!-- Footer: stays pinned to the bottom through the root flex layout -->
-      <footer>© 2026 kinotime.net. All rights reserved.</footer>
+      <footer>© 2026 kinotime.net. Barcha huquqlar himoyalangan.</footer>
     </div>
   </body>
 </html>

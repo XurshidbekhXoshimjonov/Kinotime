@@ -25,6 +25,8 @@ const configuredSiteUrl = normalizeBaseUrl(process.env.NEXT_PUBLIC_SITE_URL || d
 const configuredApiUrl = normalizeBaseUrl(process.env.NEXT_PUBLIC_API_URL || `${configuredSiteUrl}/api`);
 const adminEmail = (process.env.ADMIN_EMAIL || "").toLowerCase();
 const adminPassword = process.env.ADMIN_PASSWORD || "";
+const localAdminEmail = (process.env.LOCAL_ADMIN_EMAIL || "admin@localhost.test").toLowerCase();
+const localAdminPassword = process.env.LOCAL_ADMIN_PASSWORD || "LocalAdmin123!";
 const jwtSecret = process.env.JWT_SECRET || (isProduction ? "" : "kinotime-development-jwt-secret");
 const betaNoindex =
   process.env.BETA_NOINDEX === "true" ||
@@ -94,6 +96,11 @@ function getHostname(value) {
 }
 
 function getPublicSiteUrl(req) {
+  if (isLocalHost(req.hostname)) {
+    const host = req.get("host");
+    return host ? `${req.protocol}://${host}` : configuredSiteUrl;
+  }
+
   if (process.env.NEXT_PUBLIC_SITE_URL) {
     return configuredSiteUrl;
   }
@@ -103,9 +110,15 @@ function getPublicSiteUrl(req) {
 }
 
 function getPublicApiUrl(req) {
+  if (isLocalHost(req.hostname)) {
+    const host = req.get("host");
+    const requestSiteUrl = host ? `${req.protocol}://${host}` : configuredSiteUrl;
+    return `${requestSiteUrl}/api`;
+  }
+
   const configuredApiHost = getHostname(configuredApiUrl);
 
-  if (process.env.NEXT_PUBLIC_API_URL && (!isLocalHost(configuredApiHost) || isLocalHost(req.hostname))) {
+  if (process.env.NEXT_PUBLIC_API_URL && !isLocalHost(configuredApiHost)) {
     return configuredApiUrl;
   }
 
@@ -293,7 +306,7 @@ function normalizeEpisodePayload(payload = {}, fallbackId = "") {
 
   return {
     id,
-    title: title || `Episode ${episodeNumber}`,
+    title: title || `${episodeNumber}-qism`,
     episodeNumber,
     seasonNumber,
     quality: String(payload.quality || "Full HD").trim(),
@@ -419,14 +432,26 @@ function getSeriesFilter(identifier) {
   return { slug: identifier };
 }
 
-function getAuthSettingsError() {
+function isLocalAdminRequest(req) {
+  return Boolean(req && isLocalHost(req.hostname));
+}
+
+function isLocalAdminIdentity(email, req) {
+  return isLocalAdminRequest(req) && email === localAdminEmail;
+}
+
+function isConfiguredAdminIdentity(email) {
+  return Boolean(adminEmail && email === adminEmail);
+}
+
+function getAuthSettingsError(req) {
   const missing = [];
 
-  if (!adminEmail) {
+  if (!isLocalAdminRequest(req) && !adminEmail) {
     missing.push("ADMIN_EMAIL");
   }
 
-  if (!adminPassword) {
+  if (!isLocalAdminRequest(req) && !adminPassword) {
     missing.push("ADMIN_PASSWORD");
   }
 
@@ -465,8 +490,8 @@ function createAuthToken(user) {
   return `${header}.${payload}.${signature}`;
 }
 
-function createAdminToken() {
-  return createAuthToken(getAdminUser());
+function createAdminToken(email = adminEmail) {
+  return createAuthToken(getAdminUser(email));
 }
 
 function verifyAuthToken(token) {
@@ -505,10 +530,11 @@ function verifyAuthToken(token) {
   }
 }
 
-function verifyAdminToken(token) {
+function verifyAdminToken(token, req) {
   const decoded = verifyAuthToken(token);
+  const email = decoded?.email || decoded?.sub;
 
-  if (!decoded || decoded.role !== "admin" || (decoded.email || decoded.sub) !== adminEmail) {
+  if (!decoded || decoded.role !== "admin" || (!isConfiguredAdminIdentity(email) && !isLocalAdminIdentity(email, req))) {
     return null;
   }
 
@@ -529,11 +555,11 @@ function timingSafeStringEqual(first, second) {
   return crypto.timingSafeEqual(firstHash, secondHash);
 }
 
-function getAdminUser() {
+function getAdminUser(email = adminEmail) {
   return {
-    id: adminEmail || "admin",
-    email: adminEmail,
-    name: adminEmail.split("@")[0] || "Admin",
+    id: email || "admin",
+    email,
+    name: email === localAdminEmail ? "Lokal admin" : email.split("@")[0] || "Admin",
     role: "admin",
     createdAt: "",
   };
@@ -586,8 +612,10 @@ async function getAuthenticatedUser(req) {
     return null;
   }
 
-  if (tokenPayload.role === "admin" && (tokenPayload.email || tokenPayload.sub) === adminEmail) {
-    return getAdminUser();
+  const tokenEmail = tokenPayload.email || tokenPayload.sub;
+
+  if (tokenPayload.role === "admin" && (isConfiguredAdminIdentity(tokenEmail) || isLocalAdminIdentity(tokenEmail, req))) {
+    return getAdminUser(tokenEmail);
   }
 
   if (!isMongoConfigured()) {
@@ -709,14 +737,14 @@ function requireMongo(req, res, next) {
 }
 
 function requireAdmin(req, res, next) {
-  const settingsError = getAuthSettingsError();
+  const settingsError = getAuthSettingsError(req);
 
   if (settingsError) {
     res.status(503).json({ error: `Admin auth sozlanmagan: ${settingsError}` });
     return;
   }
 
-  const tokenPayload = verifyAdminToken(getBearerToken(req));
+  const tokenPayload = verifyAdminToken(getBearerToken(req), req);
 
   if (!tokenPayload) {
     res.status(401).json({ error: "Admin token noto'g'ri yoki muddati tugagan." });
@@ -768,7 +796,7 @@ app.post("/api/auth/register", requireMongo, async (req, res) => {
     const collection = await getUsersCollection();
     const existing = await collection.findOne({ email });
 
-    if (existing || email === adminEmail) {
+    if (existing || email === adminEmail || email === localAdminEmail) {
       res.status(409).json({ error: "Bu email bilan profil mavjud." });
       return;
     }
@@ -813,6 +841,14 @@ app.post("/api/auth/login", async (req, res) => {
     res.json({
       user: getAdminUser(),
       token: createAdminToken(),
+    });
+    return;
+  }
+
+  if (isLocalAdminRequest(req) && email === localAdminEmail && localAdminPassword && timingSafeStringEqual(password, localAdminPassword)) {
+    res.json({
+      user: getAdminUser(localAdminEmail),
+      token: createAdminToken(localAdminEmail),
     });
     return;
   }
@@ -862,7 +898,7 @@ app.patch("/api/auth/me", requireAuth, async (req, res) => {
       return;
     }
 
-    if (req.user.role === "admin" && req.user.email === adminEmail) {
+    if (req.user.role === "admin" && (isConfiguredAdminIdentity(req.user.email) || isLocalAdminIdentity(req.user.email, req))) {
       res.json({ user: { ...req.user, name } });
       return;
     }
@@ -887,7 +923,7 @@ app.patch("/api/auth/me", requireAuth, async (req, res) => {
 
 app.post("/api/auth/change-password", requireAuth, async (req, res) => {
   try {
-    if (req.user.role === "admin" && req.user.email === adminEmail) {
+    if (req.user.role === "admin" && (isConfiguredAdminIdentity(req.user.email) || isLocalAdminIdentity(req.user.email, req))) {
       res.status(400).json({ error: "Admin paroli server sozlamalarida boshqariladi." });
       return;
     }

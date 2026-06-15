@@ -15,6 +15,10 @@ const CATALOG_SORT_OPTIONS = [
   { value: "newest", label: "Yangi qo'shilganlar" },
   { value: "oldest", label: "Eskilar" },
 ];
+const STATUS_LABELS = {
+  Published: "E'lon qilingan",
+  Draft: "Qoralama",
+};
 const WORLD_COUNTRIES = [
   { label: "Afghanistan" },
   { label: "Albania" },
@@ -459,10 +463,10 @@ const sectionConfig = {
     ariaLabel: "Seriallar ro'yxati",
   },
   admin: {
-    title: "Admin panel",
+    title: "Admin paneli",
     subtitle: "",
     searchPlaceholder: "",
-    ariaLabel: "Admin panel",
+    ariaLabel: "Admin paneli",
   },
 };
 
@@ -791,6 +795,28 @@ function formatDuration(value) {
   return /^\d+$/.test(duration) ? `${duration} daqiqa` : duration;
 }
 
+function getStatusLabel(status) {
+  return STATUS_LABELS[status] || status || "Noma'lum";
+}
+
+function getContentTypeLabel(type) {
+  return ["Serial", "Series", "series"].includes(type) ? "Serial" : "Film";
+}
+
+function getSeriesCountLabel(seasonCount, episodeCount) {
+  const parts = [];
+
+  if (seasonCount) {
+    parts.push(`${seasonCount} mavsum`);
+  }
+
+  if (episodeCount) {
+    parts.push(`${episodeCount} qism`);
+  }
+
+  return parts.join(" • ") || "Qismlar qo'shilmagan";
+}
+
 function isEpisodeCountDuration(value) {
   return /^\d+\s*(ta\s*)?(qism|qismlar|episode|episodes)\b/i.test(value.toString().trim());
 }
@@ -872,7 +898,7 @@ function normalizeEpisodeSchema(item = {}, index = 0) {
 
   return {
     id: (item.id ?? item.episodeId ?? fallbackId).toString(),
-    title: title || `Episode ${episodeNumber}`,
+    title: title || `${episodeNumber}-qism`,
     episodeNumber,
     seasonNumber,
     quality: (item.quality ?? "Full HD").toString().trim(),
@@ -2062,7 +2088,7 @@ function hasAdminAccess() {
 
 function assertAdminAccess() {
   if (!hasAdminAccess()) {
-    throw new Error("Admin access required");
+    throw new Error("Admin ruxsati kerak");
   }
 }
 
@@ -2845,7 +2871,7 @@ function formatDisplayDate(value, fallback = "Noma'lum") {
 }
 
 function getRoleLabel(role) {
-  return role === "admin" ? "Admin" : "User";
+  return role === "admin" ? "Administrator" : "Foydalanuvchi";
 }
 
 function getUserInitial(user = currentUser) {
@@ -2899,11 +2925,11 @@ async function renderProfilePage() {
         <div class="account-profile-main">
           <p class="account-kicker">Profil</p>
           <h1 id="profile-page-title">${escapeHtml(label)}</h1>
-          <p>${escapeHtml(currentUser.email || "Email kiritilmagan")}</p>
+              <p>${escapeHtml(currentUser.email || "Elektron pochta kiritilmagan")}</p>
         </div>
         <div class="account-status">
           <span class="account-status__dot"></span>
-          Online
+          Onlayn
         </div>
       </section>
 
@@ -2913,7 +2939,7 @@ async function renderProfilePage() {
           <strong>${escapeHtml(getRoleLabel(currentUser.role))}</strong>
         </div>
         <div>
-          <span>Email</span>
+          <span>Elektron pochta</span>
           <strong>${escapeHtml(currentUser.email || "Noma'lum")}</strong>
         </div>
         <div>
@@ -2922,7 +2948,7 @@ async function renderProfilePage() {
         </div>
         <div>
           <span>Holat</span>
-          <strong>Online</strong>
+          <strong>Onlayn</strong>
         </div>
       </section>
 
@@ -3074,7 +3100,7 @@ function renderAdminMovieList(errorMessage = "") {
           <div class="admin-movie-item__body added-movie-info">
             <div>
               <h4 class="added-movie-title">${escapeHtml(movie.titleUz)}</h4>
-              <p class="added-movie-meta">${escapeHtml(movie.originalTitle)} • ${movie.year} • ${escapeHtml(movie.type)}</p>
+              <p class="added-movie-meta">${escapeHtml(movie.originalTitle)} • ${movie.year} • ${escapeHtml(getContentTypeLabel(movie.type))}</p>
             </div>
             <div class="admin-movie-item__meta">
               <span class="added-movie-genres">${movie.genres.map(escapeHtml).join(", ")}</span>
@@ -3083,11 +3109,11 @@ function renderAdminMovieList(errorMessage = "") {
           <div class="admin-movie-item__actions added-movie-actions">
             <button class="button button--ghost admin-movie-item__button" type="button" data-admin-edit="${escapeHtml(movieRecordId)}">
               <i class="ti ti-edit" aria-hidden="true"></i>
-              Edit
+              Tahrirlash
             </button>
             <button class="button admin-movie-item__button admin-movie-item__button--danger" type="button" data-admin-delete="${escapeHtml(movieRecordId)}">
               <i class="ti ti-trash" aria-hidden="true"></i>
-              Delete
+              O'chirish
             </button>
           </div>
         </article>
@@ -3107,17 +3133,8 @@ function getSeriesRecordId(series) {
 function getSeriesCountText(series) {
   const seasonCount = Number(series.seasonsCount) || getDerivedSeasonCount(series.episodes);
   const episodeCount = getSeriesEpisodeCount(series);
-  const parts = [];
 
-  if (seasonCount) {
-    parts.push(`${seasonCount} season${seasonCount === 1 ? "" : "s"}`);
-  }
-
-  if (episodeCount) {
-    parts.push(`${episodeCount} episode${episodeCount === 1 ? "" : "s"}`);
-  }
-
-  return parts.join(" • ") || "Episodes not added";
+  return getSeriesCountLabel(seasonCount, episodeCount);
 }
 
 function renderAdminSeriesList(errorMessage = "") {
@@ -3156,7 +3173,7 @@ function renderAdminSeriesList(errorMessage = "") {
     adminSeriesList.innerHTML = `
       <div class="admin-list-state">
         <i class="ti ti-database-off" aria-hidden="true"></i>
-        <span>Hozircha serial yo'q. Create Series formasidan yangi serial qo'shing.</span>
+        <span>Hozircha serial yo'q. Serial yaratish formasidan yangi serial qo'shing.</span>
       </div>
     `;
     return;
@@ -3188,26 +3205,26 @@ function renderAdminSeriesList(errorMessage = "") {
           <div class="admin-movie-item__body added-movie-info admin-series-card__body">
             <div>
               <h4 class="added-movie-title">${escapeHtml(series.titleUz)}</h4>
-              <p class="added-movie-meta">${escapeHtml(series.originalTitle)} • ${series.year || "Year"} • Series</p>
+              <p class="added-movie-meta">${escapeHtml(series.originalTitle)} • ${series.year || "Yil"} • Serial</p>
             </div>
             <div class="admin-movie-item__meta admin-series-card__meta">
               <span class="added-movie-genres">${escapeHtml(genreText)}</span>
               <span>${escapeHtml(countText)}</span>
-              <span>${escapeHtml(series.status)}</span>
+              <span>${escapeHtml(getStatusLabel(series.status))}</span>
             </div>
           </div>
           <div class="admin-movie-item__actions added-movie-actions admin-series-card__actions">
             <button class="button button--ghost admin-movie-item__button admin-series-card__button" type="button" data-series-preview="${escapeHtml(seriesRecordId)}">
               <i class="ti ti-eye" aria-hidden="true"></i>
-              View
+              Ko'rish
             </button>
             <button class="button button--ghost admin-movie-item__button admin-series-card__button" type="button" data-series-edit="${escapeHtml(seriesRecordId)}">
               <i class="ti ti-edit" aria-hidden="true"></i>
-              Edit
+              Tahrirlash
             </button>
             <button class="button admin-movie-item__button admin-series-card__button admin-movie-item__button--danger" type="button" data-series-delete="${escapeHtml(seriesRecordId)}">
               <i class="ti ti-trash" aria-hidden="true"></i>
-              Delete
+              O'chirish
             </button>
           </div>
         </article>
@@ -3217,7 +3234,7 @@ function renderAdminSeriesList(errorMessage = "") {
 }
 
 function formatMetric(value) {
-  return new Intl.NumberFormat("en-US").format(Number(value || 0));
+  return new Intl.NumberFormat("uz-UZ").format(Number(value || 0));
 }
 
 function setStatisticsFeedback(message = "", type = "") {
@@ -3253,12 +3270,12 @@ function renderStatisticsSummary(summary = {}) {
   }
 
   const cards = [
-    ["Today's visits", formatMetric(summary.todaysVisits), "ti-calendar-stats"],
-    ["Total visits", formatMetric(summary.totalVisits), "ti-eye"],
-    ["Online users right now", formatMetric(summary.onlineUsers), "ti-users"],
-    ["Total movies", formatMetric(summary.totalMovies), "ti-movie"],
-    ["Total series", formatMetric(summary.totalSeries), "ti-device-tv"],
-    ["Total download clicks", formatMetric(summary.totalDownloadClicks), "ti-download"],
+    ["Bugungi tashriflar", formatMetric(summary.todaysVisits), "ti-calendar-stats"],
+    ["Jami tashriflar", formatMetric(summary.totalVisits), "ti-eye"],
+    ["Hozir onlayn foydalanuvchilar", formatMetric(summary.onlineUsers), "ti-users"],
+    ["Jami filmlar", formatMetric(summary.totalMovies), "ti-movie"],
+    ["Jami seriallar", formatMetric(summary.totalSeries), "ti-device-tv"],
+    ["Jami yuklab olish bosishlari", formatMetric(summary.totalDownloadClicks), "ti-download"],
   ];
 
   statisticsSummaryCards.innerHTML = cards.map(([label, value, icon]) => getSummaryCardMarkup(label, value, icon)).join("");
@@ -3282,7 +3299,7 @@ function renderStatisticsLoading() {
     container.innerHTML = `
       <div class="admin-list-state">
         <i class="ti ti-loader-2" aria-hidden="true"></i>
-        <span>Statistics loading...</span>
+        <span>Statistika yuklanmoqda...</span>
       </div>
     `;
   });
@@ -3314,7 +3331,7 @@ function renderStatisticsTable(container, rows = []) {
     container.innerHTML = `
       <div class="admin-list-state">
         <i class="ti ti-chart-bar-off" aria-hidden="true"></i>
-        <span>No analytics data yet.</span>
+        <span>Hali analitika ma'lumotlari yo'q.</span>
       </div>
     `;
     return;
@@ -3325,10 +3342,10 @@ function renderStatisticsTable(container, rows = []) {
       <thead>
         <tr>
           <th>Poster</th>
-          <th>Title</th>
-          <th>Type</th>
-          <th>View count</th>
-          <th>Download count</th>
+          <th>Nomi</th>
+          <th>Turi</th>
+          <th>Ko'rishlar soni</th>
+          <th>Yuklab olishlar soni</th>
         </tr>
       </thead>
       <tbody>
@@ -3345,7 +3362,7 @@ function renderStatisticsTable(container, rows = []) {
                   <strong>${escapeHtml(row.title)}</strong>
                 </td>
                 <td>
-                  <span class="statistics-type">${escapeHtml(row.type === "series" ? "series" : "movie")}</span>
+                  <span class="statistics-type">${escapeHtml(row.type === "series" ? "Serial" : "Film")}</span>
                 </td>
                 <td>${formatMetric(row.viewCount)}</td>
                 <td>${formatMetric(row.downloadCount)}</td>
@@ -3369,7 +3386,7 @@ function renderStatisticsChart(container, chart = {}) {
     container.innerHTML = `
       <div class="admin-list-state">
         <i class="ti ti-chart-line" aria-hidden="true"></i>
-        <span>No chart data yet.</span>
+        <span>Hali chart ma'lumotlari yo'q.</span>
       </div>
     `;
     return;
@@ -3382,8 +3399,8 @@ function renderStatisticsChart(container, chart = {}) {
 
   container.innerHTML = `
     <div class="statistics-chart__legend">
-      <span><i class="statistics-dot statistics-dot--visits" aria-hidden="true"></i> Daily visits</span>
-      <span><i class="statistics-dot statistics-dot--downloads" aria-hidden="true"></i> Daily download clicks</span>
+      <span><i class="statistics-dot statistics-dot--visits" aria-hidden="true"></i> Kunlik tashriflar</span>
+      <span><i class="statistics-dot statistics-dot--downloads" aria-hidden="true"></i> Kunlik yuklab olish bosishlari</span>
     </div>
     <div class="statistics-chart__plot">
       ${days
@@ -3395,7 +3412,7 @@ function renderStatisticsChart(container, chart = {}) {
 
           return `
             <div class="statistics-chart__day">
-              <div class="statistics-chart__bars" title="${escapeHtml(item.day)}: ${visits} visits, ${downloads} downloads">
+              <div class="statistics-chart__bars" title="${escapeHtml(item.day)}: ${visits} tashrif, ${downloads} yuklab olish">
                 <span class="statistics-chart__bar statistics-chart__bar--visits" style="height: ${visitHeight}%"></span>
                 <span class="statistics-chart__bar statistics-chart__bar--downloads" style="height: ${downloadHeight}%"></span>
               </div>
@@ -3418,7 +3435,7 @@ function renderStatisticsDashboard(snapshot) {
   renderStatisticsChart(statisticsChart30, snapshot.chart30);
   renderStatisticsTable(statisticsTopViewed, snapshot.topMovies?.topViewed || []);
   renderStatisticsTable(statisticsTopDownloaded, snapshot.topMovies?.topDownloaded || []);
-  setStatisticsFeedback(`Updated ${new Date().toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}.`, "success");
+  setStatisticsFeedback(`${new Date().toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })} da yangilandi.`, "success");
 }
 
 async function fetchAdminStatsJson(path) {
@@ -3428,7 +3445,7 @@ async function fetchAdminStatsJson(path) {
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({}));
-    throw new Error(errorBody.error || "Statistics could not be loaded.");
+    throw new Error(errorBody.error || "Statistikani yuklab bo'lmadi.");
   }
 
   return response.json();
@@ -3491,23 +3508,23 @@ function createSeriesEpisodeRow(episode = {}, index = 0) {
   row.innerHTML = `
     <input type="hidden" class="episode-id" value="${escapeHtml(item.id)}" />
     <label class="field">
-      <span>Season</span>
+      <span>Mavsum</span>
       <input class="episode-season" type="number" min="1" value="${escapeHtml(item.seasonNumber)}" required />
     </label>
     <label class="field">
-      <span>Episode</span>
+      <span>Qism</span>
       <input class="episode-number" type="number" min="1" value="${escapeHtml(item.episodeNumber)}" required />
     </label>
     <label class="field">
-      <span>Episode title</span>
+      <span>Qism nomi</span>
       <input class="episode-title" type="text" value="${escapeHtml(item.title)}" required />
     </label>
     <label class="field">
-      <span>Quality</span>
+      <span>Sifat</span>
       <input class="episode-quality" type="text" value="${escapeHtml(item.quality || "Full HD")}" required />
     </label>
     <label class="field">
-      <span>Video source</span>
+      <span>Video manbasi</span>
       <select class="episode-video-source" required>
         <option value="WEB-DL"${item.videoSource === "WEB-DL" ? " selected" : ""}>WEB-DL</option>
         <option value="WEBRip"${item.videoSource === "WEBRip" ? " selected" : ""}>WEBRip</option>
@@ -3519,7 +3536,7 @@ function createSeriesEpisodeRow(episode = {}, index = 0) {
       </select>
     </label>
     <label class="field">
-      <span>Format</span>
+      <span>Fayl formati</span>
       <select class="episode-format" required>
         <option value="MP4"${item.format === "MP4" ? " selected" : ""}>MP4</option>
         <option value="MKV"${item.format === "MKV" ? " selected" : ""}>MKV</option>
@@ -3528,21 +3545,21 @@ function createSeriesEpisodeRow(episode = {}, index = 0) {
       </select>
     </label>
     <label class="field">
-      <span>File size</span>
+      <span>Fayl hajmi</span>
       <input class="episode-file-size" type="text" value="${escapeHtml(item.fileSize)}" placeholder="1.2 GB" />
     </label>
     <label class="field">
-      <span>Download/video URL</span>
+      <span>Yuklab olish/video havolasi</span>
       <input class="episode-download-link" type="url" value="${escapeHtml(item.downloadLink || item.videoUrl)}" required />
     </label>
     <label class="field field--wide">
-      <span>Optional description</span>
+      <span>Ixtiyoriy tavsif</span>
       <textarea class="episode-description" rows="2" maxlength="600">${escapeHtml(item.description || item.duration)}</textarea>
     </label>
     <div class="series-episode-row__actions">
       <button class="button admin-movie-item__button--danger" type="button" data-remove-episode>
         <i class="ti ti-trash" aria-hidden="true"></i>
-        Remove Episode
+        Qismni olib tashlash
       </button>
     </div>
   `;
@@ -3688,7 +3705,7 @@ function validateSeriesForm(form, posterDataUrl = "", existingSeries = null) {
 
   if (!posterUrl) {
     form.elements.namedItem("posterFile").focus();
-    seriesFeedback.textContent = "Serial posteri uchun rasm yuklang yoki URL kiriting.";
+    seriesFeedback.textContent = "Serial posteri uchun rasm yuklang yoki havola kiriting.";
     return false;
   }
 
@@ -3723,7 +3740,7 @@ function fillSeriesEditForm(series) {
   seriesEditPanel.hidden = false;
   renderSeriesPreview(item);
   renderAdminSeriesList();
-  seriesFeedback.textContent = "Edit Series ochildi.";
+  seriesFeedback.textContent = "Serial tahrirlash uchun ochildi.";
   seriesEditPanel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -3742,7 +3759,7 @@ function clearSeriesEditForm() {
 function clearEpisodeForm() {
   editingEpisodeId = "";
   seriesEpisodeForm.reset();
-  seriesEpisodeSubmit.innerHTML = '<i class="ti ti-plus" aria-hidden="true"></i> Add Episode';
+  seriesEpisodeSubmit.innerHTML = '<i class="ti ti-plus" aria-hidden="true"></i> Qism qo\'shish';
 }
 
 function clearEpisodePanel() {
@@ -3808,11 +3825,11 @@ function renderEpisodePanel() {
           <div class="episode-item__actions">
             <button class="button button--ghost admin-series-card__button" type="button" data-episode-edit="${escapeHtml(episode.id)}">
               <i class="ti ti-edit" aria-hidden="true"></i>
-              Edit
+              Tahrirlash
             </button>
             <button class="button admin-series-card__button admin-movie-item__button--danger" type="button" data-episode-delete="${escapeHtml(episode.id)}">
               <i class="ti ti-trash" aria-hidden="true"></i>
-              Delete
+              O'chirish
             </button>
           </div>
         </article>
@@ -3828,7 +3845,7 @@ function fillEpisodeForm(episode) {
   seriesEpisodeForm.elements.namedItem("seasonNumber").value = episode.seasonNumber;
   seriesEpisodeForm.elements.namedItem("videoUrl").value = episode.downloadLink || episode.videoUrl;
   seriesEpisodeForm.elements.namedItem("description").value = episode.description;
-  seriesEpisodeSubmit.innerHTML = '<i class="ti ti-device-floppy" aria-hidden="true"></i> Save Episode';
+  seriesEpisodeSubmit.innerHTML = '<i class="ti ti-device-floppy" aria-hidden="true"></i> Qismni saqlash';
   seriesEpisodeForm.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
@@ -3862,8 +3879,8 @@ function renderSeriesPreview(series = {}, { scroll = false } = {}) {
               </div>
               ${
                 episode.downloadLink || episode.videoUrl
-                  ? `<a href="${escapeHtml(episode.downloadLink || episode.videoUrl)}" target="_blank" rel="noreferrer">Download</a>`
-                  : `<span class="series-preview-card__missing-link">No link</span>`
+                  ? `<a href="${escapeHtml(episode.downloadLink || episode.videoUrl)}" target="_blank" rel="noreferrer">Yuklab olish</a>`
+                  : `<span class="series-preview-card__missing-link">Havola yo'q</span>`
               }
             </li>
           `,
@@ -3874,20 +3891,20 @@ function renderSeriesPreview(series = {}, { scroll = false } = {}) {
   seriesPreviewContent.innerHTML = `
     <article class="preview-card series-preview-card">
       <div class="preview-card__poster-wrap">
-        <img class="preview-card__poster series-preview-card__poster" src="${escapeHtml(item.posterUrl || POSTER_PLACEHOLDER)}" alt="${escapeHtml(item.titleUz || "Series")} posteri" />
-        <span class="preview-card__quality">SERIES<br />${escapeHtml(item.status || "Draft")}</span>
+        <img class="preview-card__poster series-preview-card__poster" src="${escapeHtml(item.posterUrl || POSTER_PLACEHOLDER)}" alt="${escapeHtml(item.titleUz || "Serial")} posteri" />
+        <span class="preview-card__quality">SERIAL<br />${escapeHtml(getStatusLabel(item.status || "Draft"))}</span>
       </div>
       <div class="series-preview-card__body">
         <h4>${escapeHtml(item.titleUz || "Yangi serial")}</h4>
-        <p>${escapeHtml(item.originalTitle || "Original nomi")}</p>
+        <p>${escapeHtml(item.originalTitle || "Asl nomi")}</p>
         <div class="series-preview-card__meta">
           <span>${escapeHtml(category)}</span>
           <span>${escapeHtml(item.year || "2026")}</span>
           <span>${escapeHtml(item.country || "Davlat")}</span>
           <span>${escapeHtml(languages)}</span>
           <span>★ ${Number(item.rating || 0).toFixed(1)}</span>
-          <span>${seasonCount || 0} seasons</span>
-          <span>${episodeCount || 0} episodes</span>
+          <span>${seasonCount || 0} mavsum</span>
+          <span>${episodeCount || 0} qism</span>
         </div>
         <p class="series-preview-card__description">${escapeHtml(item.description || item.tavsif || "")}</p>
         <ul class="series-preview-card__episodes">${episodeMarkup}</ul>
@@ -3908,7 +3925,7 @@ function renderPreviewMovie(movie) {
 
   previewPoster.src = item.posterUrl || POSTER_PLACEHOLDER;
   previewTitle.textContent = item.titleUz || "Yangi film";
-  previewOriginal.textContent = item.originalTitle || "Original nomi";
+  previewOriginal.textContent = item.originalTitle || "Asl nomi";
   previewMeta.textContent = `${item.year || "2026"} • ${item.genres.join(", ") || "Janr"} • ${languages}`;
   previewQuality.textContent = item.quality || "Full HD";
   previewVideo.textContent = item.videoSource || "WEB-DL";
@@ -3950,8 +3967,8 @@ function fillAdminForm(movie) {
   editingMovieSlug = getMovieRecordId(item);
   adminPreviewEditButton.hidden = true;
   adminPreviewEditButton.disabled = true;
-  adminMovieFormTitle.textContent = "Edit Movie";
-  adminSubmitButton.textContent = "Save Changes";
+  adminMovieFormTitle.textContent = "Filmni tahrirlash";
+  adminSubmitButton.textContent = "O'zgarishlarni saqlash";
   adminForm.elements.namedItem("slug").readOnly = true;
   adminForm.elements.namedItem("titleUz").value = item.titleUz;
   adminForm.elements.namedItem("originalTitle").value = item.originalTitle;
@@ -3976,7 +3993,7 @@ function fillAdminForm(movie) {
   slugEditedManually = true;
   updateAdminPreview();
   renderAdminMovieList();
-  adminFeedback.textContent = "Edit mode opened. Make changes and click Save Changes.";
+  adminFeedback.textContent = "Tahrirlash rejimi ochildi. O'zgarish kiriting va saqlash tugmasini bosing.";
   adminForm.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -3984,8 +4001,8 @@ function resetAdminFormMode() {
   editingMovieSlug = "";
   adminPreviewEditButton.hidden = true;
   adminPreviewEditButton.disabled = true;
-  adminMovieFormTitle.textContent = "Add New Movie";
-  adminSubmitButton.textContent = "Add Movie";
+  adminMovieFormTitle.textContent = "Yangi film qo'shish";
+  adminSubmitButton.textContent = "Film qo'shish";
   adminForm.elements.namedItem("slug").readOnly = false;
   renderAdminMovieList();
 }
@@ -4161,7 +4178,7 @@ function renderAuthPage(mode) {
   document.body.classList.add("is-auth-page");
   hideCatalogAndAccountPages();
   authPage.hidden = false;
-  authPageTitle.textContent = isSignup ? "Create account" : "Welcome back";
+  authPageTitle.textContent = isSignup ? "Profil yaratish" : "Xush kelibsiz";
   authPageSubtitle.textContent = isSignup
     ? "Yangi KinoTime profilingizni yarating"
     : "KinoTime profilingizga kiring";
@@ -4171,8 +4188,8 @@ function renderAuthPage(mode) {
   resetAuthForm(signupForm);
   setAuthFeedback();
   authPageSwitch.innerHTML = isSignup
-    ? 'Profilingiz bormi? <button type="button" data-auth-switch="login">Login</button>'
-    : 'Profilingiz yo\'qmi? <button type="button" data-auth-switch="signup">Sign Up</button>';
+    ? 'Profilingiz bormi? <button type="button" data-auth-switch="login">Kirish</button>'
+    : 'Profilingiz yo\'qmi? <button type="button" data-auth-switch="signup">Ro\'yxatdan o\'tish</button>';
   setActiveNav("");
 }
 
@@ -4313,7 +4330,7 @@ function openDetailPage(itemOrId, options = {}) {
                   <div class="download-row episode-download-row">
                     <div class="download-row__left">
                       <span class="download-row__label">S${episode.seasonNumber} E${episode.episodeNumber}: ${escapeHtml(episode.title)}</span>
-                      <span class="download-badge">${escapeHtml(episode.description || "Episode")}</span>
+                      <span class="download-badge">${escapeHtml(episode.description || "Qism")}</span>
                     </div>
                     <a class="download-row__button" href="${escapeHtml(episode.downloadLink || episode.videoUrl)}" download aria-label="${escapeHtml(episode.title)} yuklab olish" data-download-track data-download-content-id="${escapeHtml(getContentAnalyticsId(item))}" data-download-movie-id="${escapeHtml(`${item.id}-${episode.id}`)}" data-download-title="${escapeHtml(`${item.titleUz} - S${episode.seasonNumber} E${episode.episodeNumber}: ${episode.title}`)}" data-download-poster="${escapeHtml(item.posterUrl)}" data-download-quality="${escapeHtml(episode.quality || item.quality || "1080p")}" data-download-size="${escapeHtml(episode.fileSize || "")}" data-download-format="${escapeHtml(episode.format || item.format || "MP4")}">
                       <i class="ti ti-download" aria-hidden="true"></i>
@@ -4330,11 +4347,11 @@ function openDetailPage(itemOrId, options = {}) {
           <h3 id="download-title">${isSeries ? "Serialni yuklab olish" : "Filmni yuklab olish"}</h3>
           <div class="download-row">
             <div class="download-row__left">
-              <span class="download-row__label">Download 1080p</span>
+              <span class="download-row__label">1080p yuklab olish</span>
               <span class="download-badge">${escapeHtml(download.size || item.download1080pSize || "")}</span>
               <span class="download-badge download-badge--format">${escapeHtml(download.format || item.format || "MP4")}</span>
             </div>
-            <a class="download-row__button" href="${escapeHtml(download.url || item.download1080pUrl || "#")}" download aria-label="Download 1080p" data-download-track data-download-content-id="${escapeHtml(getContentAnalyticsId(item))}" data-download-movie-id="${escapeHtml(item.id)}" data-download-title="${escapeHtml(item.titleUz)}" data-download-poster="${escapeHtml(item.posterUrl)}" data-download-quality="1080p" data-download-size="${escapeHtml(download.size || item.download1080pSize || "")}" data-download-format="${escapeHtml(download.format || item.format || "MP4")}">
+            <a class="download-row__button" href="${escapeHtml(download.url || item.download1080pUrl || "#")}" download aria-label="1080p yuklab olish" data-download-track data-download-content-id="${escapeHtml(getContentAnalyticsId(item))}" data-download-movie-id="${escapeHtml(item.id)}" data-download-title="${escapeHtml(item.titleUz)}" data-download-poster="${escapeHtml(item.posterUrl)}" data-download-quality="1080p" data-download-size="${escapeHtml(download.size || item.download1080pSize || "")}" data-download-format="${escapeHtml(download.format || item.format || "MP4")}">
               <i class="ti ti-download" aria-hidden="true"></i>
             </a>
           </div>
@@ -4362,7 +4379,7 @@ function openDetailPage(itemOrId, options = {}) {
 
         <div class="movie-detail__title-block">
           <h2>${detailTitle}</h2>
-          <p class="movie-detail__original">Original nomi: ${item.originalTitle}</p>
+          <p class="movie-detail__original">Asl nomi: ${item.originalTitle}</p>
         </div>
 
         <div class="genre-list">${item.genres.map(createTag).join("")}</div>
@@ -4423,7 +4440,7 @@ function closeMobileMenu() {
 }
 
 function getUserLabel(user) {
-  return user?.name || user?.email || "User";
+  return user?.name || user?.email || "Foydalanuvchi";
 }
 
 function closeProfileDropdown() {
@@ -4798,7 +4815,7 @@ adminMovieList.addEventListener("click", async (event) => {
     const slug = deleteButton.dataset.adminDelete;
     const movie = findAdminMovieById(slug);
     const deletedMovieId = movie ? getMovieRecordId(movie) : slug;
-    const confirmed = window.confirm("Are you sure you want to delete this movie?");
+    const confirmed = window.confirm("Bu filmni o'chirishni tasdiqlaysizmi?");
 
     if (!confirmed) {
       return;
@@ -4838,7 +4855,7 @@ adminSeriesList.addEventListener("click", async (event) => {
     }
 
     renderSeriesPreview(series, { scroll: false });
-    seriesFeedback.textContent = "Serial preview ko'rsatildi.";
+    seriesFeedback.textContent = "Serial oldindan ko'rish oynasida ko'rsatildi.";
     return;
   }
 
@@ -4862,7 +4879,7 @@ adminSeriesList.addEventListener("click", async (event) => {
   if (deleteButton) {
     const series = findSeriesById(deleteButton.dataset.seriesDelete);
     const deletedSeriesIds = series ? [getSeriesRecordId(series), series.slug, series.id] : [deleteButton.dataset.seriesDelete];
-    const confirmed = window.confirm("Are you sure you want to delete this series?");
+    const confirmed = window.confirm("Bu serialni o'chirishni tasdiqlaysizmi?");
 
     if (!confirmed) {
       return;
@@ -4889,7 +4906,7 @@ adminSeriesList.addEventListener("click", async (event) => {
 });
 
 adminPreviewEditButton.addEventListener("click", () => {
-  adminFeedback.textContent = "Filmni tahrirlash uchun Qo'shilgan kinolar ro'yxatidagi Edit tugmasini bosing.";
+  adminFeedback.textContent = "Filmni tahrirlash uchun Qo'shilgan kinolar ro'yxatidagi Tahrirlash tugmasini bosing.";
 });
 
 logoutButton.addEventListener("click", () => {
@@ -5012,7 +5029,7 @@ function getAdminPreviewData() {
 
   return {
     titleUz: getAdminFormValue("titleUz", "Yangi film"),
-    originalTitle: getAdminFormValue("originalTitle", "Original nomi"),
+    originalTitle: getAdminFormValue("originalTitle", "Asl nomi"),
     year: getAdminFormValue("year", "2026"),
     genres: selectedGenres.length ? selectedGenres : ["Janr"],
     languages: selectedLanguages,
@@ -5153,7 +5170,7 @@ function validateAdminForm() {
 
   if (!posterUrl) {
     adminForm.elements.namedItem("posterFile").focus();
-    adminFeedback.textContent = "Poster rasmi yuklang yoki poster URL kiriting.";
+    adminFeedback.textContent = "Poster rasmi yuklang yoki poster havolasini kiriting.";
     return false;
   }
 
@@ -5294,7 +5311,7 @@ document.querySelectorAll("[data-series-preview-form]").forEach((button) => {
     const previewSeries = getSeriesFormPayload(form, posterDataUrl, existingSeries);
 
     renderSeriesPreview(previewSeries, { scroll: true });
-    seriesFeedback.textContent = "Preview tayyor. MongoDB'ga saqlanmadi.";
+    seriesFeedback.textContent = "Oldindan ko'rish tayyor. MongoDB'ga saqlanmadi.";
   });
 });
 
@@ -5516,7 +5533,7 @@ seriesEpisodeList.addEventListener("click", async (event) => {
   }
 
   if (deleteButton) {
-    const confirmed = window.confirm("Are you sure you want to delete this episode?");
+    const confirmed = window.confirm("Bu qismni o'chirishni tasdiqlaysizmi?");
 
     if (!confirmed) {
       return;
