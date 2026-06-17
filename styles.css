@@ -1833,7 +1833,7 @@ body.is-auth-page .site-search {
 
 .admin-series-grid {
   display: grid;
-  grid-template-columns: minmax(620px, 1fr) 360px minmax(460px, 560px);
+  grid-template-columns: minmax(0, 1fr) 360px;
   align-items: start;
   gap: 32px;
 }
@@ -1850,6 +1850,10 @@ body.is-auth-page .site-search {
 }
 
 #series-create-form {
+  grid-row: 1;
+}
+
+#series-edit-panel {
   grid-row: 1;
 }
 
@@ -1873,6 +1877,13 @@ body.is-auth-page .site-search {
   border-radius: var(--radius-md);
   padding: var(--space-4);
   background: rgba(18, 23, 34, 0.52);
+}
+
+.admin-form[hidden],
+.admin-edit-panel[hidden],
+.admin-episode-panel[hidden],
+.admin-series-preview[hidden] {
+  display: none;
 }
 
 .admin-edit-panel__header {
@@ -2198,6 +2209,182 @@ body.is-auth-page .site-search {
 }
 
 .admin-list-state--error i {
+  color: #f87171;
+}
+
+.admin-editing-toolbar {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.admin-editing-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 48px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-4);
+  background: rgba(8, 12, 19, 0.72);
+  color: var(--color-muted);
+}
+
+.admin-editing-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  outline: none;
+}
+
+.admin-editing-search input::placeholder {
+  color: var(--color-muted);
+}
+
+.admin-editing-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.admin-editing-filter {
+  min-height: 42px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-4);
+  background: rgba(18, 23, 34, 0.64);
+  color: var(--color-soft);
+  font-weight: 800;
+}
+
+.admin-editing-filter.is-active {
+  border-color: rgba(79, 107, 255, 0.58);
+  background: rgba(79, 107, 255, 0.16);
+  color: #ffffff;
+}
+
+.admin-edit-list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.admin-edit-item {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-4);
+  border: 1px solid rgba(40, 49, 68, 0.88);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  background: rgba(15, 23, 42, 0.92);
+}
+
+.admin-edit-item.is-selected {
+  border-color: rgba(79, 107, 255, 0.72);
+  box-shadow: 0 0 0 1px rgba(79, 107, 255, 0.18);
+}
+
+.admin-edit-item__poster {
+  width: 76px;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  background: #111827;
+}
+
+.admin-edit-item__body {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.admin-edit-item__header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.admin-edit-item__header h4,
+.admin-edit-item__original {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-edit-item__header h4 {
+  color: var(--color-text);
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.admin-edit-item__original {
+  margin-top: 3px;
+  color: var(--color-muted);
+  font-size: 0.82rem;
+}
+
+.admin-edit-type,
+.admin-edit-item__meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  border: 1px solid rgba(79, 107, 255, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 0 9px;
+  background: rgba(79, 107, 255, 0.08);
+  color: var(--color-soft);
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.admin-edit-type--movie {
+  color: #dbeafe;
+}
+
+.admin-edit-type--series {
+  border-color: rgba(168, 85, 247, 0.3);
+  background: rgba(124, 58, 237, 0.12);
+  color: #ede9fe;
+}
+
+.admin-edit-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.admin-edit-item__meta span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-edit-item__actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-2);
+}
+
+.admin-edit-feedback {
+  margin-top: var(--space-3);
+}
+
+.admin-edit-feedback--success {
+  color: #4ade80;
+}
+
+.admin-edit-feedback--error {
   color: #f87171;
 }
 
@@ -2589,7 +2776,7 @@ body.is-auth-page .site-search {
 .admin-layout,
 .admin-main-grid {
   display: grid;
-  grid-template-columns: minmax(620px, 1fr) 360px minmax(460px, 560px);
+  grid-template-columns: minmax(0, 1fr) 360px;
   gap: 32px;
   align-items: start;
 }
@@ -3605,36 +3792,8 @@ footer {
     max-width: 300px;
   }
 
-  .admin-layout,
-  .admin-main-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-series-grid {
-    grid-template-columns: 1fr;
-  }
-
   .statistics-summary-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  #series-create-form,
-  #series-edit-panel,
-  #series-preview-panel,
-  #series-episode-panel,
-  #series-feedback,
-  .admin-series-manager {
-    grid-column: 1;
-    grid-row: auto;
-  }
-
-  .admin-side-panel {
-    position: static;
-  }
-
-  .added-movies-panel {
-    min-width: 0;
-    max-width: none;
   }
 }
 
@@ -3670,6 +3829,31 @@ footer {
 }
 
 @media (max-width: 1024px) {
+  .admin-layout,
+  .admin-main-grid,
+  .admin-series-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #series-create-form,
+  #series-edit-panel,
+  #series-preview-panel,
+  #series-episode-panel,
+  #series-feedback,
+  .admin-series-manager {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .admin-side-panel {
+    position: static;
+  }
+
+  .added-movies-panel {
+    min-width: 0;
+    max-width: none;
+  }
+
   .detail-page {
     padding: 24px var(--page-gutter) 36px;
   }
@@ -3880,6 +4064,33 @@ footer {
 
   .admin-manager__header {
     display: grid;
+  }
+
+  .admin-editing-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-editing-filters {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .admin-editing-filter {
+    padding: 0 var(--space-2);
+  }
+
+  .admin-edit-item {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  .admin-edit-item__poster {
+    width: 64px;
+  }
+
+  .admin-edit-item__actions {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .statistics-heading,
@@ -4241,18 +4452,21 @@ footer {
   }
 
   .admin-series-card,
+  .admin-edit-item,
   .series-preview-card,
   .episode-item {
     grid-template-columns: 1fr;
   }
 
   .admin-series-card__poster,
+  .admin-edit-item__poster,
   .series-preview-card__poster {
     width: 100%;
     max-height: 320px;
   }
 
   .admin-edit-panel__header,
+  .admin-edit-item__header,
   .admin-series-card__header,
   .series-episode-toolbar,
   .series-preview-card__episodes li {

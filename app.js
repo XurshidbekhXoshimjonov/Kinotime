@@ -490,6 +490,7 @@ const adminGuard = document.querySelector("#admin-guard");
 const adminWorkspace = document.querySelector("#admin-workspace");
 const adminTitle = document.querySelector("#admin-title");
 const adminMovieFormTitle = document.querySelector("#admin-movie-form-title");
+const adminSeriesTitle = document.querySelector("#admin-series-title");
 const adminTabButtons = document.querySelectorAll("[data-admin-tab]");
 const adminPanels = document.querySelectorAll("[data-admin-panel]");
 const adminForm = document.querySelector("#admin-form");
@@ -524,6 +525,10 @@ const statisticsTopViewed = document.querySelector("#statistics-top-viewed");
 const statisticsTopDownloaded = document.querySelector("#statistics-top-downloaded");
 const statisticsFeedback = document.querySelector("#statistics-feedback");
 const adminRefreshStatistics = document.querySelector("#admin-refresh-statistics");
+const adminEditSearch = document.querySelector("#admin-edit-search");
+const adminEditFilterButtons = document.querySelectorAll("[data-admin-edit-filter]");
+const adminEditList = document.querySelector("#admin-edit-list");
+const adminEditFeedback = document.querySelector("#admin-edit-feedback");
 const authPage = document.querySelector("#auth-page");
 const authPageTitle = document.querySelector("#auth-page-title");
 const authPageSubtitle = document.querySelector("#auth-page-subtitle");
@@ -576,6 +581,10 @@ let isPosterProcessing = false;
 let editingMovieSlug = "";
 let isAdminMoviesLoading = false;
 let activeAdminPanel = "movies";
+let adminEditSearchTerm = "";
+let adminEditTypeFilter = "all";
+let adminMovieListError = "";
+let adminSeriesListError = "";
 let seriesCreateSlugEditedManually = false;
 let seriesCreatePosterDataUrl = "";
 let seriesEditPosterDataUrl = "";
@@ -3047,7 +3056,202 @@ function renderSettingsPage() {
   `;
 }
 
+function setAdminEditFeedback(message = "", type = "") {
+  if (!adminEditFeedback) {
+    return;
+  }
+
+  adminEditFeedback.textContent = message;
+  adminEditFeedback.className = "admin-form__feedback admin-edit-feedback";
+
+  if (type) {
+    adminEditFeedback.classList.add(`admin-edit-feedback--${type}`);
+  }
+}
+
+function getAdminEditGenreText(item) {
+  const genres = normalizeGenres(item.genres);
+
+  if (genres.length) {
+    return genres.join(", ");
+  }
+
+  return item.genre || item.category || "Janr";
+}
+
+function getAdminEditItems() {
+  return [
+    ...movieCatalogItems.map((movie) => ({
+      type: "movie",
+      label: "Film",
+      item: forceMovieSchema(movie),
+    })),
+    ...seriesCatalogItems.map((series) => ({
+      type: "series",
+      label: "Serial",
+      item: normalizeSeriesSchema(series),
+    })),
+  ].sort((first, second) => {
+    const firstTime = getCatalogSortTimestamp(first.item) ?? 0;
+    const secondTime = getCatalogSortTimestamp(second.item) ?? 0;
+
+    return secondTime - firstTime;
+  });
+}
+
+function doesAdminEditItemMatchSearch(entry) {
+  const search = normalizeText(adminEditSearchTerm || "");
+
+  if (!search) {
+    return true;
+  }
+
+  const item = entry.item;
+  const haystack = [
+    item.titleUz,
+    item.originalTitle,
+    item.year,
+    getAdminEditGenreText(item),
+    item.slug,
+  ]
+    .map((value) => normalizeText(value || ""))
+    .join(" ");
+
+  return haystack.includes(search);
+}
+
+function doesAdminEditItemMatchFilter(entry) {
+  if (adminEditTypeFilter === "movies") {
+    return entry.type === "movie";
+  }
+
+  if (adminEditTypeFilter === "series") {
+    return entry.type === "series";
+  }
+
+  return true;
+}
+
+function isAdminEditItemSelected(entry) {
+  const item = entry.item;
+  const ids = [entry.type === "movie" ? getMovieRecordId(item) : getSeriesRecordId(item), item.slug, item.id, item.mongoId].filter(Boolean);
+
+  return entry.type === "movie" ? ids.includes(editingMovieSlug) : ids.includes(editingSeriesId);
+}
+
+function renderAdminEditFilterButtons() {
+  adminEditFilterButtons.forEach((button) => {
+    const isActive = button.dataset.adminEditFilter === adminEditTypeFilter;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", isActive.toString());
+  });
+}
+
+function renderAdminEditList() {
+  if (!adminEditList) {
+    return;
+  }
+
+  if (!hasAdminAccess()) {
+    adminEditList.innerHTML = "";
+    setAdminEditFeedback("");
+    return;
+  }
+
+  renderAdminEditFilterButtons();
+
+  const isLoading = isAdminMoviesLoading || isAdminSeriesLoading;
+  const allItems = getAdminEditItems();
+
+  if (isLoading && !allItems.length) {
+    adminEditList.innerHTML = `
+      <div class="admin-list-state">
+        <i class="ti ti-loader-2" aria-hidden="true"></i>
+        <span>Kontent yuklanmoqda...</span>
+      </div>
+    `;
+    setAdminEditFeedback("");
+    return;
+  }
+
+  const errors = [adminMovieListError, adminSeriesListError].filter(Boolean);
+  const filteredItems = allItems.filter((entry) => doesAdminEditItemMatchFilter(entry) && doesAdminEditItemMatchSearch(entry));
+
+  if (!filteredItems.length) {
+    const emptyText = allItems.length
+      ? "Qidiruv bo'yicha film yoki serial topilmadi."
+      : "Hozircha MongoDB'da film yoki serial yo'q.";
+
+    adminEditList.innerHTML = `
+      <div class="admin-list-state${errors.length ? " admin-list-state--error" : ""}">
+        <i class="ti ${errors.length ? "ti-alert-circle" : "ti-database-off"}" aria-hidden="true"></i>
+        <span>${escapeHtml(errors.join(" ") || emptyText)}</span>
+      </div>
+    `;
+    setAdminEditFeedback("");
+    return;
+  }
+
+  const statusMarkup = errors.length
+    ? `
+      <div class="admin-list-state admin-list-state--error">
+        <i class="ti ti-alert-circle" aria-hidden="true"></i>
+        <span>${escapeHtml(errors.join(" "))}</span>
+      </div>
+    `
+    : "";
+
+  adminEditList.innerHTML =
+    statusMarkup +
+    filteredItems
+      .map((entry) => {
+        const item = entry.item;
+        const recordId = entry.type === "movie" ? getMovieRecordId(item) : getSeriesRecordId(item);
+        const originalTitleMarkup =
+          item.originalTitle && item.originalTitle !== item.titleUz
+            ? `<p class="admin-edit-item__original">${escapeHtml(item.originalTitle)}</p>`
+            : "";
+        const genreText = getAdminEditGenreText(item);
+        const selectedClass = isAdminEditItemSelected(entry) ? " is-selected" : "";
+
+        return `
+          <article class="admin-edit-item${selectedClass}">
+            <img class="admin-edit-item__poster" src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.titleUz)} posteri" loading="lazy" />
+            <div class="admin-edit-item__body">
+              <div class="admin-edit-item__header">
+                <div>
+                  <h4>${escapeHtml(item.titleUz || "Nomsiz")}</h4>
+                  ${originalTitleMarkup}
+                </div>
+                <span class="admin-edit-type admin-edit-type--${entry.type}">${entry.label}</span>
+              </div>
+              <div class="admin-edit-item__meta">
+                <span><i class="ti ti-calendar" aria-hidden="true"></i>${escapeHtml(item.year || "Yil")}</span>
+                <span><i class="ti ti-category" aria-hidden="true"></i>${escapeHtml(genreText)}</span>
+              </div>
+            </div>
+            <div class="admin-edit-item__actions">
+              <button class="button button--ghost admin-movie-item__button" type="button" data-admin-edit-content="${escapeHtml(recordId)}" data-admin-edit-type="${entry.type}">
+                <i class="ti ti-edit" aria-hidden="true"></i>
+                Tahrirlash
+              </button>
+              <button class="button admin-movie-item__button admin-movie-item__button--danger" type="button" data-admin-delete-content="${escapeHtml(recordId)}" data-admin-delete-type="${entry.type}">
+                <i class="ti ti-trash" aria-hidden="true"></i>
+                O'chirish
+              </button>
+            </div>
+          </article>
+        `;
+      })
+      .join("");
+
+  setAdminEditFeedback(`${filteredItems.length} ta kontent ko'rsatildi.`);
+}
+
 function renderAdminMovieList(errorMessage = "") {
+  adminMovieListError = errorMessage;
+  renderAdminEditList();
+
   if (!adminMovieList) {
     return;
   }
@@ -3138,6 +3342,9 @@ function getSeriesCountText(series) {
 }
 
 function renderAdminSeriesList(errorMessage = "") {
+  adminSeriesListError = errorMessage;
+  renderAdminEditList();
+
   if (!adminSeriesList) {
     return;
   }
@@ -3737,7 +3944,11 @@ function fillSeriesEditForm(series) {
   editingSeriesId = getSeriesRecordId(item);
   seriesEditPosterDataUrl = "";
   setSeriesFormValues(seriesEditForm, item);
+  seriesCreateForm.hidden = true;
   seriesEditPanel.hidden = false;
+  if (adminSeriesTitle) {
+    adminSeriesTitle.textContent = "Serialni tahrirlash";
+  }
   renderSeriesPreview(item);
   renderAdminSeriesList();
   seriesFeedback.textContent = "Serial tahrirlash uchun ochildi.";
@@ -3752,6 +3963,10 @@ function clearSeriesEditForm() {
   setMultiSelectValues("genres", [], seriesEditForm);
   setMultiSelectValues("languages", [], seriesEditForm);
   seriesEditPanel.hidden = true;
+  seriesCreateForm.hidden = false;
+  if (adminSeriesTitle) {
+    adminSeriesTitle.textContent = "Yangi serial qo'shish";
+  }
   updateSeriesPreviewFromForm(seriesCreateForm, seriesCreatePosterDataUrl);
   renderAdminSeriesList();
 }
@@ -4021,7 +4236,7 @@ function setActiveNav(section) {
 }
 
 function setActiveAdminPanel(panel) {
-  activeAdminPanel = ["movies", "series", "statistics"].includes(panel) ? panel : "movies";
+  activeAdminPanel = ["movies", "series", "statistics", "editing"].includes(panel) ? panel : "movies";
 
   adminTabButtons.forEach((button) => {
     const isActive = button.dataset.adminTab === activeAdminPanel;
@@ -4036,6 +4251,10 @@ function setActiveAdminPanel(panel) {
 
   if (activeAdminPanel === "statistics") {
     loadAdminStatistics();
+  }
+
+  if (activeAdminPanel === "editing") {
+    renderAdminEditList();
   }
 }
 
@@ -4774,14 +4993,14 @@ adminRefreshStatistics?.addEventListener("click", () => {
   loadAdminStatistics({ force: true });
 });
 
-adminRefreshMovies.addEventListener("click", () => {
+adminRefreshMovies?.addEventListener("click", () => {
   adminFeedback.textContent = "Kinolar ro'yxati yangilanmoqda...";
   loadCatalogFromApi().then(() => {
     adminFeedback.textContent = "Kinolar ro'yxati yangilandi.";
   });
 });
 
-adminRefreshSeries.addEventListener("click", async () => {
+adminRefreshSeries?.addEventListener("click", async () => {
   seriesFeedback.textContent = "Seriallar ro'yxati yangilanmoqda...";
   const errorMessage = await loadSeriesFromApi();
   syncCatalogItems();
@@ -4795,52 +5014,142 @@ adminRefreshSeries.addEventListener("click", async () => {
   }
 });
 
-adminMovieList.addEventListener("click", async (event) => {
+function openAdminMovieEditor(identifier) {
+  const movie = findAdminMovieById(identifier);
+
+  if (!movie) {
+    adminFeedback.textContent = "Film topilmadi.";
+    setAdminEditFeedback("Film topilmadi.", "error");
+    return;
+  }
+
+  setActiveAdminPanel("movies");
+  fillAdminForm(movie);
+  setAdminEditFeedback(`${movie.titleUz || "Film"} tahrirlash uchun ochildi.`, "success");
+}
+
+function openAdminSeriesEditor(identifier) {
+  const series = findSeriesById(identifier);
+
+  if (!series) {
+    seriesFeedback.textContent = "Serial topilmadi.";
+    setAdminEditFeedback("Serial topilmadi.", "error");
+    return;
+  }
+
+  setActiveAdminPanel("series");
+  fillSeriesEditForm(series);
+  setAdminEditFeedback(`${series.titleUz || "Serial"} tahrirlash uchun ochildi.`, "success");
+}
+
+function confirmAdminDelete() {
+  return window.confirm("Haqiqatan ham o‘chirmoqchimisiz?");
+}
+
+async function deleteAdminMovie(identifier, deleteButton = null, feedbackElement = adminFeedback) {
+  const movie = findAdminMovieById(identifier);
+  const deletedMovieId = movie ? getMovieRecordId(movie) : identifier;
+
+  if (!confirmAdminDelete()) {
+    return;
+  }
+
+  try {
+    if (deleteButton) {
+      deleteButton.disabled = true;
+    }
+
+    const deletingText = `${movie?.titleUz || "Film"} o'chirilmoqda...`;
+    if (feedbackElement) {
+      feedbackElement.textContent = deletingText;
+    }
+    setAdminEditFeedback(deletingText);
+    await deleteMovieFromCatalog(identifier);
+    if (feedbackElement) {
+      feedbackElement.textContent = "Film MongoDB'dan o'chirildi.";
+    }
+    setAdminEditFeedback("Film o'chirildi.", "success");
+
+    if (editingMovieSlug === deletedMovieId || editingMovieSlug === movie?.slug) {
+      adminForm.reset();
+    } else {
+      renderAdminMovieList();
+    }
+
+    renderAdminEditList();
+  } catch (error) {
+    if (deleteButton) {
+      deleteButton.disabled = false;
+    }
+
+    if (feedbackElement) {
+      feedbackElement.textContent = error.message;
+    }
+    setAdminEditFeedback(error.message, "error");
+  }
+}
+
+async function deleteAdminSeries(identifier, deleteButton = null, feedbackElement = seriesFeedback) {
+  const series = findSeriesById(identifier);
+  const deletedSeriesIds = series ? [getSeriesRecordId(series), series.slug, series.id] : [identifier];
+
+  if (!confirmAdminDelete()) {
+    return;
+  }
+
+  try {
+    if (deleteButton) {
+      deleteButton.disabled = true;
+    }
+
+    const deletingText = `${series?.titleUz || "Serial"} o'chirilmoqda...`;
+    if (feedbackElement) {
+      feedbackElement.textContent = deletingText;
+    }
+    setAdminEditFeedback(deletingText);
+    await deleteSeriesFromCatalog(identifier);
+    if (feedbackElement) {
+      feedbackElement.textContent = "Serial o'chirildi.";
+    }
+    setAdminEditFeedback("Serial o'chirildi.", "success");
+
+    if (deletedSeriesIds.includes(editingSeriesId)) {
+      clearSeriesEditForm();
+    }
+
+    if (deletedSeriesIds.includes(selectedSeriesId)) {
+      clearEpisodePanel();
+    }
+
+    renderAdminEditList();
+  } catch (error) {
+    if (deleteButton) {
+      deleteButton.disabled = false;
+    }
+
+    if (feedbackElement) {
+      feedbackElement.textContent = error.message;
+    }
+    setAdminEditFeedback(error.message, "error");
+  }
+}
+
+adminMovieList?.addEventListener("click", async (event) => {
   const editButton = event.target.closest("[data-admin-edit]");
   const deleteButton = event.target.closest("[data-admin-delete]");
 
   if (editButton) {
-    const movie = findAdminMovieById(editButton.dataset.adminEdit);
-
-    if (!movie) {
-      adminFeedback.textContent = "Film topilmadi.";
-      return;
-    }
-
-    fillAdminForm(movie);
+    openAdminMovieEditor(editButton.dataset.adminEdit);
     return;
   }
 
   if (deleteButton) {
-    const slug = deleteButton.dataset.adminDelete;
-    const movie = findAdminMovieById(slug);
-    const deletedMovieId = movie ? getMovieRecordId(movie) : slug;
-    const confirmed = window.confirm("Bu filmni o'chirishni tasdiqlaysizmi?");
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      deleteButton.disabled = true;
-      adminFeedback.textContent = `${movie?.titleUz || "Film"} o'chirilmoqda...`;
-      await deleteMovieFromCatalog(slug);
-      adminFeedback.textContent = "Film MongoDB'dan o'chirildi.";
-
-      if (editingMovieSlug === deletedMovieId || editingMovieSlug === movie?.slug) {
-        adminForm.reset();
-      } else {
-        renderAdminMovieList();
-      }
-    } catch (error) {
-      deleteButton.disabled = false;
-      adminFeedback.textContent = error.message;
-    }
+    await deleteAdminMovie(deleteButton.dataset.adminDelete, deleteButton, adminFeedback);
     return;
   }
 });
 
-adminSeriesList.addEventListener("click", async (event) => {
+adminSeriesList?.addEventListener("click", async (event) => {
   const previewButton = event.target.closest("[data-series-preview]");
   const editButton = event.target.closest("[data-series-edit]");
   const episodesButton = event.target.closest("[data-series-episodes]");
@@ -4860,14 +5169,7 @@ adminSeriesList.addEventListener("click", async (event) => {
   }
 
   if (editButton) {
-    const series = findSeriesById(editButton.dataset.seriesEdit);
-
-    if (!series) {
-      seriesFeedback.textContent = "Serial topilmadi.";
-      return;
-    }
-
-    fillSeriesEditForm(series);
+    openAdminSeriesEditor(editButton.dataset.seriesEdit);
     return;
   }
 
@@ -4877,36 +5179,49 @@ adminSeriesList.addEventListener("click", async (event) => {
   }
 
   if (deleteButton) {
-    const series = findSeriesById(deleteButton.dataset.seriesDelete);
-    const deletedSeriesIds = series ? [getSeriesRecordId(series), series.slug, series.id] : [deleteButton.dataset.seriesDelete];
-    const confirmed = window.confirm("Bu serialni o'chirishni tasdiqlaysizmi?");
+    await deleteAdminSeries(deleteButton.dataset.seriesDelete, deleteButton, seriesFeedback);
+  }
+});
 
-    if (!confirmed) {
+adminEditSearch?.addEventListener("input", (event) => {
+  adminEditSearchTerm = event.target.value;
+  renderAdminEditList();
+});
+
+adminEditFilterButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const filter = button.dataset.adminEditFilter;
+    adminEditTypeFilter = ["all", "movies", "series"].includes(filter) ? filter : "all";
+    renderAdminEditList();
+  });
+});
+
+adminEditList?.addEventListener("click", async (event) => {
+  const editButton = event.target.closest("[data-admin-edit-content]");
+  const deleteButton = event.target.closest("[data-admin-delete-content]");
+
+  if (editButton) {
+    if (editButton.dataset.adminEditType === "series") {
+      openAdminSeriesEditor(editButton.dataset.adminEditContent);
       return;
     }
 
-    try {
-      deleteButton.disabled = true;
-      seriesFeedback.textContent = `${series?.titleUz || "Serial"} o'chirilmoqda...`;
-      await deleteSeriesFromCatalog(deleteButton.dataset.seriesDelete);
-      seriesFeedback.textContent = "Serial o'chirildi.";
+    openAdminMovieEditor(editButton.dataset.adminEditContent);
+    return;
+  }
 
-      if (deletedSeriesIds.includes(editingSeriesId)) {
-        clearSeriesEditForm();
-      }
-
-      if (deletedSeriesIds.includes(selectedSeriesId)) {
-        clearEpisodePanel();
-      }
-    } catch (error) {
-      deleteButton.disabled = false;
-      seriesFeedback.textContent = error.message;
+  if (deleteButton) {
+    if (deleteButton.dataset.adminDeleteType === "series") {
+      await deleteAdminSeries(deleteButton.dataset.adminDeleteContent, deleteButton, adminEditFeedback);
+      return;
     }
+
+    await deleteAdminMovie(deleteButton.dataset.adminDeleteContent, deleteButton, adminEditFeedback);
   }
 });
 
 adminPreviewEditButton.addEventListener("click", () => {
-  adminFeedback.textContent = "Filmni tahrirlash uchun Qo'shilgan kinolar ro'yxatidagi Tahrirlash tugmasini bosing.";
+  adminFeedback.textContent = "Filmni tahrirlash uchun Tahrirlash tabidagi Tahrirlash tugmasini bosing.";
 });
 
 logoutButton.addEventListener("click", () => {

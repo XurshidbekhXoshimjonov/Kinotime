@@ -379,6 +379,10 @@
                 <i class="ti ti-chart-bar" aria-hidden="true"></i>
                 Statistika
               </button>
+              <button class="admin-tab" type="button" role="tab" aria-selected="false" data-admin-tab="editing">
+                <i class="ti ti-edit" aria-hidden="true"></i>
+                Tahrirlash
+              </button>
             </div>
 
             <section class="admin-view is-active" id="admin-movies-panel" data-admin-panel="movies" aria-labelledby="admin-movie-form-title">
@@ -388,209 +392,208 @@
               </div>
 
               <div class="admin-layout admin-main-grid">
-              <form class="admin-form" id="admin-form" novalidate>
-                <fieldset class="admin-fieldset">
-                  <legend>Asosiy ma'lumotlar</legend>
+                <form class="admin-form" id="admin-form" novalidate>
+                  <fieldset class="admin-fieldset">
+                    <legend>Asosiy ma'lumotlar</legend>
 
-                  <label class="field">
-                    <span>Film nomi</span>
-                    <input type="text" name="titleUz" placeholder="Film nomi" required />
-                  </label>
+                    <label class="field">
+                      <span>Film nomi</span>
+                      <input type="text" name="titleUz" placeholder="Film nomi" required />
+                    </label>
 
-                  <label class="field">
-                    <span>Asl nomi</span>
-                    <input type="text" name="originalTitle" placeholder="Asl nomi" required />
-                  </label>
+                    <label class="field">
+                      <span>Asl nomi</span>
+                      <input type="text" name="originalTitle" placeholder="Asl nomi" required />
+                    </label>
 
-                  <label class="field">
-                    <span>URL nomi</span>
-                    <input type="text" name="slug" placeholder="qaronlik-ortida" required />
-                  </label>
+                    <label class="field">
+                      <span>URL nomi</span>
+                      <input type="text" name="slug" placeholder="qaronlik-ortida" required />
+                    </label>
 
-                  <label class="field field--wide">
-                    <span>Tavsif</span>
-                    <textarea name="description" rows="5" maxlength="1000" placeholder="Film haqida qisqacha ma'lumot..." required></textarea>
-                  </label>
-                </fieldset>
+                    <label class="field field--wide">
+                      <span>Tavsif</span>
+                      <textarea name="description" rows="5" maxlength="1000" placeholder="Film haqida qisqacha ma'lumot..." required></textarea>
+                    </label>
+                  </fieldset>
 
-                <fieldset class="admin-fieldset">
-                  <legend>Film ma'lumotlari</legend>
+                  <fieldset class="admin-fieldset">
+                    <legend>Film ma'lumotlari</legend>
 
-                  <label class="field">
-                    <span>Yil</span>
-                    <input type="number" name="year" min="1900" max="2100" value="2026" required />
-                  </label>
+                    <label class="field">
+                      <span>Yil</span>
+                      <input type="number" name="year" min="1900" max="2100" value="2026" required />
+                    </label>
 
-                  <label class="field">
-                    <span>Davlat</span>
-                    <input type="text" name="country" placeholder="AQSh, Buyuk Britaniya" required />
-                  </label>
+                    <label class="field">
+                      <span>Davlat</span>
+                      <input type="text" name="country" placeholder="AQSh, Buyuk Britaniya" required />
+                    </label>
 
-                  <div class="field field--wide">
-                    <span>Janr</span>
-                    <div class="multi-select" data-multi-select="genres">
-                      <select class="multi-select__native" name="genres" multiple required tabindex="-1" aria-label="Janrlar" data-shared-genres>
-                        <option value="Action">Action</option>
-                        <option value="Adventure">Adventure</option>
-                        <option value="Animation">Animation</option>
-                        <option value="Anime">Anime</option>
-                        <option value="Biography">Biography</option>
-                        <option value="Comedy">Comedy</option>
-                        <option value="Crime">Crime</option>
-                        <option value="Detective">Detective</option>
-                        <option value="Documentary">Documentary</option>
-                        <option value="Drama">Drama</option>
-                        <option value="Family">Family</option>
-                        <option value="Fantasy">Fantasy</option>
-                        <option value="History">History</option>
-                        <option value="Horror">Horror</option>
-                        <option value="Martial Arts">Martial Arts</option>
-                        <option value="Music">Music</option>
-                        <option value="Musical">Musical</option>
-                        <option value="Mystery">Mystery</option>
-                        <option value="Romance">Romance</option>
-                        <option value="Sci-Fi">Sci-Fi</option>
-                        <option value="Sport">Sport</option>
-                        <option value="Superhero">Superhero</option>
-                        <option value="Thriller">Thriller</option>
-                        <option value="War">War</option>
-                        <option value="Western">Western</option>
-                      </select>
-                      <div class="multi-select__control">
-                        <div class="multi-select__tags" data-selected-tags="genres"></div>
-                        <button class="multi-select__toggle" type="button" data-multi-toggle="genres" aria-expanded="false">
-                          Janr tanlash
-                        </button>
+                    <div class="field field--wide">
+                      <span>Janr</span>
+                      <div class="multi-select" data-multi-select="genres">
+                        <select class="multi-select__native" name="genres" multiple required tabindex="-1" aria-label="Janrlar" data-shared-genres>
+                          <option value="Action">Action</option>
+                          <option value="Adventure">Adventure</option>
+                          <option value="Animation">Animation</option>
+                          <option value="Anime">Anime</option>
+                          <option value="Biography">Biography</option>
+                          <option value="Comedy">Comedy</option>
+                          <option value="Crime">Crime</option>
+                          <option value="Detective">Detective</option>
+                          <option value="Documentary">Documentary</option>
+                          <option value="Drama">Drama</option>
+                          <option value="Family">Family</option>
+                          <option value="Fantasy">Fantasy</option>
+                          <option value="History">History</option>
+                          <option value="Horror">Horror</option>
+                          <option value="Martial Arts">Martial Arts</option>
+                          <option value="Music">Music</option>
+                          <option value="Musical">Musical</option>
+                          <option value="Mystery">Mystery</option>
+                          <option value="Romance">Romance</option>
+                          <option value="Sci-Fi">Sci-Fi</option>
+                          <option value="Sport">Sport</option>
+                          <option value="Superhero">Superhero</option>
+                          <option value="Thriller">Thriller</option>
+                          <option value="War">War</option>
+                          <option value="Western">Western</option>
+                        </select>
+                        <div class="multi-select__control">
+                          <div class="multi-select__tags" data-selected-tags="genres"></div>
+                          <button class="multi-select__toggle" type="button" data-multi-toggle="genres" aria-expanded="false">
+                            Janr tanlash
+                          </button>
+                        </div>
+                        <div class="multi-select__menu" data-multi-menu="genres" hidden></div>
+                        <p class="field-error" data-field-error="genres"></p>
                       </div>
-                      <div class="multi-select__menu" data-multi-menu="genres" hidden></div>
-                      <p class="field-error" data-field-error="genres"></p>
                     </div>
+
+                    <div class="field field--wide">
+                      <span>Tillar</span>
+                      <div class="multi-select" data-multi-select="languages">
+                        <select class="multi-select__native" name="languages" multiple required tabindex="-1" aria-label="Tillar">
+                          <option value="O‘zbek">O‘zbek</option>
+                          <option value="Rus">Rus</option>
+                          <option value="Ingliz">Ingliz</option>
+                          <option value="Turk">Turk</option>
+                          <option value="Hind">Hind</option>
+                          <option value="Koreys">Koreys</option>
+                          <option value="Yapon">Yapon</option>
+                          <option value="Original">Asl til</option>
+                        </select>
+                        <div class="multi-select__control">
+                          <div class="multi-select__tags" data-selected-tags="languages"></div>
+                          <button class="multi-select__toggle" type="button" data-multi-toggle="languages" aria-expanded="false">
+                            Til tanlash
+                          </button>
+                        </div>
+                        <div class="multi-select__menu" data-multi-menu="languages" hidden></div>
+                        <p class="field-error" data-field-error="languages"></p>
+                      </div>
+                    </div>
+
+                    <label class="field">
+                      <span>Davomiyligi</span>
+                      <input type="text" name="duration" placeholder="180 daqiqa" required />
+                    </label>
+
+                    <label class="field">
+                      <span>Rejissor</span>
+                      <input type="text" name="director" placeholder="Christopher Nolan" required />
+                    </label>
+
+                    <label class="field">
+                      <span>Reyting</span>
+                      <input type="number" name="rating" min="0" max="10" step="0.1" value="8.5" required />
+                    </label>
+
+                    <label class="field">
+                      <span>Holati</span>
+                      <select name="status" required>
+                        <option value="Published">E'lon qilingan</option>
+                        <option value="Draft">Qoralama</option>
+                      </select>
+                    </label>
+                  </fieldset>
+
+                  <fieldset class="admin-fieldset">
+                    <legend>Media</legend>
+
+                    <label class="field">
+                      <span>Poster rasm yuklash</span>
+                      <input type="file" name="posterFile" accept="image/png,image/jpeg,image/webp" />
+                    </label>
+
+                    <label class="field">
+                      <span>Poster rasm havolasi</span>
+                      <input type="url" name="posterUrl" placeholder="https://example.com/poster.jpg" />
+                    </label>
+                  </fieldset>
+
+                  <fieldset class="admin-fieldset">
+                    <legend>Sifat va video</legend>
+
+                    <label class="field">
+                      <span>Sifat</span>
+                      <input type="text" name="quality" value="Full HD" readonly />
+                    </label>
+
+                    <label class="field">
+                      <span>Video manbasi</span>
+                      <select name="videoSource" required>
+                        <option value="WEB-DL">WEB-DL</option>
+                        <option value="WEBRip">WEBRip</option>
+                        <option value="BluRay">BluRay</option>
+                        <option value="BDRip">BDRip</option>
+                        <option value="HDRip">HDRip</option>
+                        <option value="HDTV">HDTV</option>
+                        <option value="DVDRip">DVDRip</option>
+                        <option value="CAMRip">CAMRip</option>
+                        <option value="TS">TS</option>
+                      </select>
+                    </label>
+                  </fieldset>
+
+                  <fieldset class="admin-fieldset">
+                    <legend>Yuklab olish</legend>
+
+                    <label class="field">
+                      <span>1080p yuklab olish havolasi</span>
+                      <input type="url" name="download1080pUrl" placeholder="https://example.com/download/film-1080p.mp4" required />
+                    </label>
+
+                    <label class="field">
+                      <span>Fayl formati</span>
+                      <select name="format" required>
+                        <option value="MP4" selected>MP4</option>
+                        <option value="MKV">MKV</option>
+                        <option value="AVI">AVI</option>
+                        <option value="MOV">MOV</option>
+                      </select>
+                    </label>
+
+                    <label class="field">
+                      <span>Fayl hajmi</span>
+                      <input type="text" name="download1080pSize" placeholder="2.4 GB" required />
+                    </label>
+                  </fieldset>
+
+                  <div class="admin-form__actions">
+                    <button class="button button--primary admin-form__submit" type="submit">
+                      Film qo'shish
+                    </button>
+                    <button class="button button--ghost" type="reset" id="admin-cancel-edit">
+                      Bekor qilish
+                    </button>
                   </div>
 
-                  <div class="field field--wide">
-                    <span>Tillar</span>
-                    <div class="multi-select" data-multi-select="languages">
-                      <select class="multi-select__native" name="languages" multiple required tabindex="-1" aria-label="Tillar">
-                        <option value="O‘zbek">O‘zbek</option>
-                        <option value="Rus">Rus</option>
-                        <option value="Ingliz">Ingliz</option>
-                        <option value="Turk">Turk</option>
-                        <option value="Hind">Hind</option>
-                        <option value="Koreys">Koreys</option>
-                        <option value="Yapon">Yapon</option>
-                        <option value="Original">Asl til</option>
-                      </select>
-                      <div class="multi-select__control">
-                        <div class="multi-select__tags" data-selected-tags="languages"></div>
-                        <button class="multi-select__toggle" type="button" data-multi-toggle="languages" aria-expanded="false">
-                          Til tanlash
-                        </button>
-                      </div>
-                      <div class="multi-select__menu" data-multi-menu="languages" hidden></div>
-                      <p class="field-error" data-field-error="languages"></p>
-                    </div>
-                  </div>
+                  <p class="admin-form__feedback" id="admin-feedback" role="status"></p>
+                </form>
 
-                  <label class="field">
-                    <span>Davomiyligi</span>
-                    <input type="text" name="duration" placeholder="180 daqiqa" required />
-                  </label>
-
-                  <label class="field">
-                    <span>Rejissor</span>
-                    <input type="text" name="director" placeholder="Christopher Nolan" required />
-                  </label>
-
-                  <label class="field">
-                    <span>Reyting</span>
-                    <input type="number" name="rating" min="0" max="10" step="0.1" value="8.5" required />
-                  </label>
-
-                  <label class="field">
-                    <span>Holati</span>
-                    <select name="status" required>
-                      <option value="Published">E'lon qilingan</option>
-                      <option value="Draft">Qoralama</option>
-                    </select>
-                  </label>
-                </fieldset>
-
-                <fieldset class="admin-fieldset">
-                  <legend>Media</legend>
-
-                  <label class="field">
-                    <span>Poster rasm yuklash</span>
-                    <input type="file" name="posterFile" accept="image/png,image/jpeg,image/webp" />
-                  </label>
-
-                  <label class="field">
-                    <span>Poster rasm havolasi</span>
-                    <input type="url" name="posterUrl" placeholder="https://example.com/poster.jpg" />
-                  </label>
-                </fieldset>
-
-                <fieldset class="admin-fieldset">
-                  <legend>Sifat va video</legend>
-
-                  <label class="field">
-                    <span>Sifat</span>
-                    <input type="text" name="quality" value="Full HD" readonly />
-                  </label>
-
-                  <label class="field">
-                    <span>Video manbasi</span>
-                    <select name="videoSource" required>
-                      <option value="WEB-DL">WEB-DL</option>
-                      <option value="WEBRip">WEBRip</option>
-                      <option value="BluRay">BluRay</option>
-                      <option value="BDRip">BDRip</option>
-                      <option value="HDRip">HDRip</option>
-                      <option value="HDTV">HDTV</option>
-                      <option value="DVDRip">DVDRip</option>
-                      <option value="CAMRip">CAMRip</option>
-                      <option value="TS">TS</option>
-                    </select>
-                  </label>
-
-                </fieldset>
-
-                <fieldset class="admin-fieldset">
-                  <legend>Yuklab olish</legend>
-
-                  <label class="field">
-                    <span>1080p yuklab olish havolasi</span>
-                    <input type="url" name="download1080pUrl" placeholder="https://example.com/download/film-1080p.mp4" required />
-                  </label>
-
-                  <label class="field">
-                    <span>Fayl formati</span>
-                    <select name="format" required>
-                      <option value="MP4" selected>MP4</option>
-                      <option value="MKV">MKV</option>
-                      <option value="AVI">AVI</option>
-                      <option value="MOV">MOV</option>
-                    </select>
-                  </label>
-
-                  <label class="field">
-                    <span>Fayl hajmi</span>
-                    <input type="text" name="download1080pSize" placeholder="2.4 GB" required />
-                  </label>
-                </fieldset>
-
-                <div class="admin-form__actions">
-                  <button class="button button--primary admin-form__submit" type="submit">
-                    Film qo'shish
-                  </button>
-                  <button class="button button--ghost" type="reset" id="admin-cancel-edit">
-                    Bekor qilish
-                  </button>
-                </div>
-
-                <p class="admin-form__feedback" id="admin-feedback" role="status"></p>
-              </form>
-
-              <div class="admin-side-panel">
+                <div class="admin-side-panel">
                 <aside class="admin-preview preview-panel" aria-labelledby="admin-preview-title">
                   <div class="admin-preview__header">
                     <h3 id="admin-preview-title">Ko'rinish oldindan ko'rish</h3>
@@ -620,27 +623,14 @@
                     </div>
                   </article>
                 </aside>
-
-                <section class="admin-manager added-movies-compact added-movies-panel" aria-labelledby="admin-manager-title">
-                  <div class="admin-manager__header">
-                    <div>
-                      <h3 id="admin-manager-title">Qo'shilgan kinolar</h3>
-                      <p>MongoDB'dagi kontentni ko'rish, tahrirlash yoki o'chirish.</p>
-                    </div>
-                    <button class="button button--ghost" type="button" id="admin-refresh-movies">
-                      Yangilash
-                    </button>
-                  </div>
-                  <div class="admin-movie-list" id="admin-movie-list" aria-live="polite"></div>
-                </section>
               </div>
             </div>
             </section>
 
             <section class="admin-view" id="admin-series-panel" data-admin-panel="series" aria-labelledby="admin-series-title" hidden>
               <div class="admin-section-heading">
-                <h3 id="admin-series-title">Seriallarni boshqarish</h3>
-                <p>Seriallar, mavsumlar va qismlar alohida saqlanadi.</p>
+                <h3 id="admin-series-title">Yangi serial qo'shish</h3>
+                <p>Serial, mavsum va qismlarni MongoDB'ga qo'shish.</p>
               </div>
 
               <div class="admin-series-grid admin-layout admin-main-grid">
@@ -1012,18 +1002,6 @@
                   <p class="admin-form__feedback" id="series-feedback" role="status"></p>
                 </div>
 
-                <section class="admin-manager added-movies-compact added-movies-panel admin-series-manager" aria-labelledby="admin-series-manager-title">
-                  <div class="admin-manager__header">
-                    <div>
-                      <h3 id="admin-series-manager-title">Qo'shilgan seriallar</h3>
-                      <p>MongoDB'dagi seriallarni ko'rish, tahrirlash yoki o'chirish.</p>
-                    </div>
-                    <button class="button button--ghost" type="button" id="admin-refresh-series">
-                      Yangilash
-                    </button>
-                  </div>
-                  <div class="admin-series-list" id="admin-series-list" aria-live="polite"></div>
-                </section>
               </div>
             </section>
 
@@ -1078,6 +1056,29 @@
 
                 <p class="admin-form__feedback statistics-feedback" id="statistics-feedback" role="status"></p>
               </div>
+            </section>
+
+            <section class="admin-view" id="admin-editing-panel" data-admin-panel="editing" aria-labelledby="admin-editing-title" hidden>
+              <div class="admin-section-heading">
+                <h3 id="admin-editing-title">Tahrirlash</h3>
+                <p>MongoDB'dagi film va seriallarni qidiring, tahrirlang yoki o'chiring.</p>
+              </div>
+
+              <div class="admin-editing-toolbar">
+                <label class="admin-editing-search" for="admin-edit-search">
+                  <i class="ti ti-search" aria-hidden="true"></i>
+                  <input id="admin-edit-search" type="search" placeholder="Film yoki serial qidirish..." autocomplete="off" />
+                </label>
+
+                <div class="admin-editing-filters" role="group" aria-label="Kontent turi">
+                  <button class="admin-editing-filter is-active" type="button" data-admin-edit-filter="all" aria-pressed="true">Barchasi</button>
+                  <button class="admin-editing-filter" type="button" data-admin-edit-filter="movies" aria-pressed="false">Filmlar</button>
+                  <button class="admin-editing-filter" type="button" data-admin-edit-filter="series" aria-pressed="false">Seriallar</button>
+                </div>
+              </div>
+
+              <div class="admin-edit-list" id="admin-edit-list" aria-live="polite"></div>
+              <p class="admin-form__feedback admin-edit-feedback" id="admin-edit-feedback" role="status"></p>
             </section>
           </div>
         </section>
